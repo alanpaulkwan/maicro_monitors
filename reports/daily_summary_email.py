@@ -9,8 +9,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from modules.clickhouse_client import query_df
 
-RESEND_API_KEY = "re_U2e7Yg83_Fi9DjHmAdpbkkNrDNXVgofJ8"
-FROM_EMAIL = "onboarding@resend.dev"
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "re_MLXxTsvc_6JpYMDMB3QGgDgU97s8C8dxV")
+FROM_EMAIL = "Gemini <gemini@resend.dev>" # Updated from address as per context
 TO_EMAIL = "alanpaulkwan@gmail.com"
 
 def generate_report_body():
@@ -20,18 +20,20 @@ def generate_report_body():
     
     # 1. Recent Trades
     lines.append("\n[Recent Trades (Last 24h)]")
+    # Using existing query_df for simplicity for now.
+    # This assumes closedPnl will be non-null when a trade closes a position.
     df_trades = query_df("""
         SELECT count(*) as count, sum(abs(sz * px)) as volume, sum(closedPnl) as pnl 
         FROM maicro_monitors.trades 
         WHERE time > now() - INTERVAL 24 HOUR
     """)
-    if not df_trades.empty:
+    if not df_trades.empty and df_trades.iloc[0]['count'] > 0:
         row = df_trades.iloc[0]
         lines.append(f"Count: {row['count']}")
         lines.append(f"Volume: ${row['volume']:,.2f}")
-        lines.append(f"Realized PnL: ${row['pnl']:,.2f}")
+        lines.append(f"Realized PnL (from trades): ${row['pnl']:,.2f}")
     else:
-        lines.append("No trades recorded.")
+        lines.append("No trades recorded in last 24h.")
 
     # 2. Open Orders
     lines.append("\n[Open Orders Snapshot]")
@@ -39,16 +41,33 @@ def generate_report_body():
     if not df_orders.empty:
         lines.append(f"Open Orders: {df_orders.iloc[0]['count']}")
     
-    # 3. Tracking Error
+    # 3. PnL Summary (from PnL Calculator)
+    lines.append("\n[PnL Summary]")
+    try:
+import traceback
+from 05_pnl_calculator.pnl_calculator import calculate_pnl, load_trades, load_funding_payments, load_positions, load_prices
+        pnl_results = pnl_calculator.calculate_pnl(
+            pnl_calculator.load_trades(),
+            pnl_calculator.load_funding_payments(),
+            pnl_calculator.load_positions(),
+            pnl_calculator.load_prices()
+        )
+        for k, v in pnl_results.items():
+            lines.append(f"{k}: ${v:,.2f}")
+    except Exception as e:
+        lines.append(f"Error calculating PnL: {e}")
+        traceback.print_exc()
+
+    # 4. Tracking Error (Latest from DB)
     lines.append("\n[Tracking Error (Latest)]")
-    df_te = query_df("SELECT * FROM maicro_monitors.tracking_error ORDER BY date DESC LIMIT 1")
+    df_te = query_df("SELECT date, te_daily, te_rolling_7d FROM maicro_monitors.tracking_error ORDER BY date DESC LIMIT 1")
     if not df_te.empty:
         row = df_te.iloc[0]
         lines.append(f"Date: {row['date']}")
         lines.append(f"Daily TE: {row['te_daily']:.6f}")
         lines.append(f"7d Rolling TE: {row['te_rolling_7d']:.6f}")
     else:
-        lines.append("No tracking error data.")
+        lines.append("No tracking error data available.")
 
     lines.append("\n=====================")
     lines.append("End of Report")
