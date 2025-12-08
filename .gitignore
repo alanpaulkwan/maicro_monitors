@@ -1,0 +1,32 @@
+# Ignore directories containing the word 'ignore'
+**/*ignore*/
+**/*ignore*/**
+*deprecated*
+*deprecate*
+
+
+# Protect local deploy keys/private files
+*.key
+*.pem
+*.secret
+/.deploy_key
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Temporary files
+*.swp
+*~
+
+# Jupyter notebooks outputs
+.ipynb_checkpoints/
+
+# Datasets or large outputs
+large_files_backup/
+outputs/
+
+# user config
+.vscode/
+
+# End
