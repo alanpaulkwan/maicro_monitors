@@ -47,6 +47,57 @@
         - **Tracking Error**: Visualizations of TE over time.
         - **System Health**: Sync latency, monitor heartbeat.
 
+## 📊 Dashboard Design Specification
+
+**Framework**: Streamlit
+**Data Source**: Remote ClickHouse (Maicro Cloud)
+
+### 1. 📈 Tab: Overview (PnL & Risk)
+**Goal**: Instant view of account health and performance.
+- **KPI Cards**:
+  - `Total Equity` (USDC)
+  - `Daily PnL` ($ and %)
+  - `Rolling 7d PnL`
+  - `Margin Usage %` / `Leverage`
+- **Charts**:
+  - **Equity Curve**: Hourly/Daily account value.
+  - **PnL Attribution**: Bar chart of Daily Realized vs Unrealized PnL.
+  - **Drawdown**: % Drawdown from peak equity.
+
+### 2. 🎯 Tab: Positions vs Targets
+**Goal**: Monitor adherence to the strategy model.
+- **Main Table**: `Live Positions` vs `Target Weights`
+  - Columns: `Symbol`, `Side`, `Notional ($)`, `Actual %`, `Target %`, `Delta %`, `Z-Score` (Deviation).
+  - **Conditional Formatting**: Highlight `Delta %` > Threshold (e.g., 2%).
+- **Charts**:
+  - **Allocation Delta**: Bar chart showing Over/Underweight per coin.
+  - **Long/Short Exposure**: Net exposure breakdown.
+
+### 3. 📉 Tab: Tracking Error Analysis
+**Goal**: Quantify execution quality and drift.
+- **Metrics**:
+  - `Daily Tracking Error` (StdDev of diffs).
+  - `Rolling 7d / 30d TE`.
+  - `Information Ratio` (if benchmark available).
+- **Charts**:
+  - **TE History**: Line chart of Daily TE over time.
+  - **Weight Scatter**: Scatter plot of Actual vs Target weights (Ideal = 45-degree line).
+
+### 4. 📝 Tab: Trade Blotter
+**Goal**: Audit individual executions.
+- **Table**: Paginated list of recent fills.
+  - `Time`, `Symbol`, `Side`, `Size`, `Price`, `Fee`, `Order ID`.
+- **Filters**: Symbol, Date Range, Side.
+- **Aggregates**: Total Volume Traded (24h), Total Fees Paid.
+
+### 5. 🏥 Tab: System Health & Sync Status
+**Goal**: Ensure data pipeline integrity.
+- **Sync Latency**:
+  - Table showing `Last Updated Timestamp` for: `trades`, `orders`, `account`, `ohlcv`.
+  - Alert if `Remote Time` lags `Local Time` by > 5 mins.
+- **Service Status**:
+  - Status indicators for `Orchestrator` and `Sync Script` (based on log file timestamps).
+
 ---
 
 ## 📂 Project Structure (Updated)

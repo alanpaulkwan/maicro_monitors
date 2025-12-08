@@ -32,3 +32,21 @@ Tracking error from “no-attempt” coins
 - Using live_trades (dry_run=0): only 2025-09-03 recorded; targets 36, traded 32, missing 4; TE_abs=0.0849 (~9.9% of |weights|). Missing: DOT, PENDLE, TON, XLM.
 - Using live_positions (any run_id): 65 days (2025-08-09 → 2025-12-05). Per-day targets ~35; average TE_abs from untried symbols 0.105 (mean), median TE_pct 10.7% of |weights|; worst days: 2025-09-29 (6 symbols missing, TE_abs 0.250), 2025-10-01, 2025-10-04.
 - Worst-day missing symbols (2025-09-29): 0G, AVNT, HEMI, LINEA, WLF I, XPL.
+
+Snapshot parity check (targets vs current positions; live_positions latest per date/symbol)
+- Targets: earliest (date, symbol) from positions_jianan_v6 with finite/non-zero weight; Current: latest kind='current' per date/symbol.
+- Categories (avg per day across 65 days, 2025-08-09 → 2025-12-05; ~36 targets/day):
+  - correct_sign: 22.17
+  - long_missing: 2.15
+  - short_missing: 3.75
+  - long_but_short (target long, current short): 3.05
+  - short_but_long (target short, current long): 3.58
+  - extra_asset (current present, no target): 0.34
+- ~61% of targets have the right sign; ~18% are missing entirely; ~18% are polarity-flipped; a few extras exist with no target.
+
+Speculation from code (~/execution/latest/hl_order)
+- Exec offset: scheduler uses target_date +1 day 00:00; monitoring assumed +2. Misalignment can mark present orders as “missing” (or vice versa).
+- Min-notional gating: planner enforces MIN_NOTIONAL_USD (env) after reserve/leverage; rounding to size_step/min_units + min_usd can drop small names; executor enforces min notional again on the diff.
+- Missing mids/meta: symbols without mids or hl_meta get skipped.
+- Side checks: orders are deltas vs current; reductions/closures appear as opposite-side trades relative to raw target sign.
+- Capital scaling: reserve + leverage rescales weights; tiny rescaled notionals get filtered out.
