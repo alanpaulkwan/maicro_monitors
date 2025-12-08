@@ -41,7 +41,11 @@ from config.settings import CLICKHOUSE_LOCAL_CONFIG, CLICKHOUSE_REMOTE_CONFIG  #
 
 def get_old_client() -> Client:
     """Connect to the legacy local ClickHouse used by claude/maicro."""
-    return Client(host="localhost", user="claude", password="iamsentient")
+    return Client(
+        host=os.getenv("CLICKHOUSE_LEGACY_HOST", "localhost"),
+        user=os.getenv("CLICKHOUSE_LEGACY_USER", "claude"),
+        password=os.getenv("CLICKHOUSE_LEGACY_PASSWORD", ""),
+    )
 
 
 def get_new_clients() -> Tuple[Client, Client]:
@@ -188,4 +192,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

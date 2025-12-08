@@ -14,17 +14,18 @@ Usage:
 """
 
 import argparse
+import os
 import clickhouse_connect
 import pandas as pd
 from datetime import date
 
-# Connection config
+# Connection config (HTTP) – credentials via env vars
 CH_CONFIG = {
-    'host': 'chenlin04.fbe.hku.hk',
-    'port': 8123,
-    'user': 'maicrobot',
-    'password': 'iamsentient',
-    'database': 'maicro_logs'
+    "host": os.getenv("CLICKHOUSE_HTTP_HOST", os.getenv("CLICKHOUSE_LOCAL_HOST", "chenlin04.fbe.hku.hk")),
+    "port": int(os.getenv("CLICKHOUSE_HTTP_PORT", "8123")),
+    "username": os.getenv("CLICKHOUSE_HTTP_USER", os.getenv("CLICKHOUSE_LOCAL_USER", "maicrobot")),
+    "password": os.getenv("CLICKHOUSE_HTTP_PASSWORD", os.getenv("CLICKHOUSE_LOCAL_PASSWORD", "")),
+    "database": os.getenv("CLICKHOUSE_HTTP_DATABASE", "maicro_logs"),
 }
 
 

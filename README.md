@@ -30,6 +30,9 @@ python3 05_pnl_calculator/pnl_calculator.py
 # 4) Start the dashboard
 export MAICRO_DASH_PASSWORD="MyStrongPassword"
 dashboard/run_dashboard.sh
+
+# 5) Install cron (optional)
+python3 scripts/register_cron.py    # appends maicro_monitors jobs to your crontab
 ```
 
 > ⚠️ Note: Local archives or deprecated folders are intentionally ignored from commits/pushes.
@@ -88,6 +91,15 @@ All cron suggestions live in `scheduled_processes/cron.md`. The key jobs:
      Daily data freshness summary for key `maicro_*` tables.
 
 See `scheduled_processes/cron.md` for the exact crontab lines.
+
+To install these into your user crontab, you can run:
+
+```bash
+python3 scripts/register_cron.py
+```
+
+This keeps existing unrelated cron jobs and only updates the
+`maicro_monitors` entries.
 
 ## Manual / experimental jobs
 
