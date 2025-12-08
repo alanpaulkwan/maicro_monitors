@@ -34,10 +34,11 @@ else
     git remote set-url origin "$REPO_URL"
 fi
 
-# Untrack certain directories if they were previously tracked so they don't get pushed
-echo "Ensuring maicro_ignore_old/ and deprecated/ are not tracked by git (if they were previously committed)..."
+# Untrack certain paths if they were previously tracked so they don't get pushed
+echo "Ensuring maicro_ignore_old/, deprecated/, and local secret files are not tracked by git (if they were previously committed)..."
 # --ignore-unmatch prevents git from exiting non-zero if those paths don't exist or aren't tracked
 git rm -r --cached --ignore-unmatch maicro_ignore_old deprecated || true
+git rm --cached --ignore-unmatch config/local_secrets.json RESEND_API_KEY.txt || true
 
 # Add all files
 echo "Adding files..."

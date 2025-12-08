@@ -1,0 +1,22 @@
+[scheduled_ping_hyperliquid] (buffer-only) Starting for 0x17f9d0098111D6Ae0915f980517264F082dB7206 at 2025-12-08 14:00:02.161696
+[account/positions] Fetching user state...
+[account] Buffered 1 rows to account_20251208_220002_362732.parquet
+[account] Buffered 1 account snapshot at 2025-12-08 14:00:02.361670.
+[positions] Buffered 30 rows to positions_20251208_220002_386843.parquet
+[positions] Buffered 30 position snapshots at 2025-12-08 14:00:02.361670.
+[trades] Fetching user fills...
+[trades] Buffered 1980 rows to trades_20251208_220003_093520.parquet
+[trades] Buffered 1980 fills.
+[orders] Fetching historical orders...
+[orders] Buffered 2000 rows to orders_20251208_220003_758645.parquet
+[orders] Buffered 2000 orders.
+[funding] Fetching funding (last 30 days)...
+[funding] Buffered 500 rows to funding_20251208_220004_341619.parquet
+[funding] Buffered 500 funding rows.
+[ledger] Fetching non‑funding ledger updates (last 30 days)...
+[ledger] No ledger updates found.
+[candles] Fetching OHLCV candles...
+[candles] Target coins: ['BTC', 'DOGE', 'ETH', 'HYPE', 'SOL', 'XRP']
+[candles] Buffered 342 rows to candles_20251208_220006_934323.parquet
+[candles] Buffered 342 candle rows.
+[scheduled_ping_hyperliquid] (buffer-only) Done at 2025-12-08 14:00:06.939433

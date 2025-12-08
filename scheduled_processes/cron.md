@@ -25,7 +25,7 @@ This script does **not** talk to ClickHouse.
 **Cadence:**
 
 ```cron
-0 * * * * cd $REPO_ROOT && /usr/bin/python3 scheduled_processes/scheduled_ping_hyperliquid.py >> logs/hyperliquid_ping.log 2>&1
+*/15 * * * * cd $REPO_ROOT && /usr/bin/python3 scheduled_processes/scheduled_ping_hyperliquid.py >> logs/hyperliquid_ping.log 2>&1
 ```
 
 ### 1.2 3‑hour dual-target buffer flush
@@ -36,6 +36,9 @@ insert into both:
 
 1. Local / chenlin host (`CLICKHOUSE_LOCAL_CONFIG`)
 2. ClickHouse Cloud (`CLICKHOUSE_REMOTE_CONFIG`)
+
+Also runs `OPTIMIZE TABLE {table} FINAL` on `ReplacingMergeTree` tables
+to deduplicate records.
 
 Targets:
 

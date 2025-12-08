@@ -66,13 +66,18 @@ class MissingPositionDiagnosis:
     symbol: str
     target_weight_pct: float
     est_notional_usd: float
+    last_order_px: Optional[float]
+    bn_spot_symbol: Optional[str]
+    bn_spot_px: Optional[float]  # latest 1h close
+    px_ratio_order_over_bn: Optional[float]  # vs latest
+    bn_spot_px_at_order: Optional[float]
+    px_ratio_order_over_bn_at_order: Optional[float]
     reason: str
     reason_detail: str
     orders_count: int
     last_order_ts: Optional[datetime]
     last_order_side: Optional[str]
     last_order_sz: Optional[float]
-    last_order_px: Optional[float]
     last_order_status: Optional[str]
     last_order_type: Optional[str]
     last_order_reduce_only: Optional[bool]
@@ -90,6 +95,89 @@ def _estimate_equity_usd(actuals: pd.DataFrame) -> float:
     if valid.empty:
         return 50_000.0
     return float(valid.median())
+
+
+def _to_binance_symbol(symbol: str) -> Optional[str]:
+    """
+    Map an HL symbol (e.g. BTC, ETH) to a Binance spot symbol.
+    For now we assume coins are quoted vs USDT on spot: BTC → BTCUSDT, etc.
+    """
+    sym = symbol.upper()
+    if not sym:
+        return None
+    # Some special cases can be added here if needed later.
+    return f"{sym}USDT"
+
+
+def _load_latest_binance_prices(symbols: List[str]) -> Dict[str, float]:
+    """
+    Load the latest Binance spot close price for each mapped symbol from binance.bn_spot_klines.
+
+    Returns a dict keyed by HL symbol (e.g. BTC) with the latest close price from
+    the corresponding Binance symbol (e.g. BTCUSDT) using the most recent timestamp.
+    """
+    if not symbols:
+        return {}
+
+    mapping: Dict[str, str] = {}
+    for s in symbols:
+        bn_sym = _to_binance_symbol(s)
+        if bn_sym:
+            mapping[s] = bn_sym
+
+    if not mapping:
+        return {}
+
+    bn_symbols = ", ".join(f"'{v}'" for v in sorted(set(mapping.values())))
+    sql = f"""
+        SELECT symbol, close
+        FROM (
+            SELECT
+                symbol,
+                close,
+                ROW_NUMBER() OVER (PARTITION BY symbol ORDER BY timestamp DESC) AS rn
+            FROM binance.bn_spot_klines
+            WHERE symbol IN ({bn_symbols})
+              AND interval = '1h'
+        )
+        WHERE rn = 1
+    """
+    df = query_df(sql)
+    if df.empty:
+        return {}
+
+    df["symbol"] = df["symbol"].astype(str)
+    df["close"] = df["close"].astype(float)
+    latest_map = {row["symbol"]: row["close"] for _, row in df.iterrows()}
+
+    hl_to_px: Dict[str, float] = {}
+    for hl_sym, bn_sym in mapping.items():
+        px = latest_map.get(bn_sym)
+        if px is not None:
+            hl_to_px[hl_sym] = float(px)
+    return hl_to_px
+
+
+def _load_binance_price_at_time(symbol: str, ts: datetime) -> Optional[float]:
+    """
+    Load the Binance spot close price (1h) for a given HL symbol at or before a timestamp.
+    """
+    bn_sym = _to_binance_symbol(symbol)
+    if not bn_sym:
+        return None
+    sql = """
+        SELECT close
+        FROM binance.bn_spot_klines
+        WHERE symbol = %(sym)s
+          AND interval = '1h'
+          AND timestamp <= %(ts)s
+        ORDER BY timestamp DESC
+        LIMIT 1
+    """
+    df = query_df(sql, params={"sym": bn_sym, "ts": ts})
+    if df.empty:
+        return None
+    return float(df.iloc[0]["close"])
 
 
 def _load_meta_for_symbols(symbols: List[str]) -> pd.DataFrame:
@@ -153,6 +241,7 @@ def _classify_missing_position_row(
 ) -> MissingPositionDiagnosis:
     symbol = str(row["symbol"])
     target_weight_pct = float(row["target_weight_pct"])
+    last_order_px: Optional[float] = None
 
     # Use raw (unnormalized) weight from positions_jianan_v6 if available
     raw_weight = float(row.get("target_raw_weight", 0.0))
@@ -191,7 +280,12 @@ def _classify_missing_position_row(
         last_order_ts = pd.to_datetime(latest["timestamp"]).to_pydatetime()
         last_order_side = str(latest.get("side", "") or "")
         last_order_sz = float(latest.get("sz", 0.0) or 0.0)
-        last_order_px = float(latest.get("limitPx", 0.0) or 0.0)
+        last_order_px_raw = latest.get("limitPx", None)
+        if last_order_px_raw is not None:
+            try:
+                last_order_px = float(last_order_px_raw)
+            except Exception:
+                last_order_px = None
         last_order_status = str(latest.get("status", "") or "")
         last_order_type = str(latest.get("orderType", "") or "")
         last_order_reduce_only = bool(latest.get("reduceOnly", False))
@@ -250,13 +344,18 @@ def _classify_missing_position_row(
         symbol=symbol,
         target_weight_pct=target_weight_pct,
         est_notional_usd=est_notional,
+        last_order_px=last_order_px,
+        bn_spot_symbol=None,
+        bn_spot_px=None,
+        px_ratio_order_over_bn=None,
+        bn_spot_px_at_order=None,
+        px_ratio_order_over_bn_at_order=None,
         reason=reason,
         reason_detail=reason_detail,
         orders_count=orders_count,
         last_order_ts=last_order_ts,
         last_order_side=last_order_side,
         last_order_sz=last_order_sz,
-        last_order_px=last_order_px,
         last_order_status=last_order_status,
         last_order_type=last_order_type,
         last_order_reduce_only=last_order_reduce_only,
@@ -293,6 +392,7 @@ def diagnose_missing_positions(
     equity_used = _estimate_equity_usd(actuals)
     meta = _load_meta_for_symbols(symbols)
     orders = _load_recent_orders(symbols, run_ts)
+    bn_prices = _load_latest_binance_prices(symbols)
 
     diagnoses: List[MissingPositionDiagnosis] = []
     for _, row in missing.iterrows():
@@ -300,6 +400,19 @@ def diagnose_missing_positions(
         meta_row = meta.loc[sym] if sym in meta.index else None
         sym_orders = orders[orders["symbol"] == sym] if not orders.empty else pd.DataFrame()
         diag = _classify_missing_position_row(row, meta_row, sym_orders, equity_used)
+        bn_sym = _to_binance_symbol(sym)
+        bn_px_latest = bn_prices.get(sym)
+        diag.bn_spot_symbol = bn_sym
+        diag.bn_spot_px = bn_px_latest
+        if diag.last_order_px and bn_px_latest and bn_px_latest > 0:
+            diag.px_ratio_order_over_bn = diag.last_order_px / bn_px_latest
+
+        # Price at order time (1h close at or before last_order_ts)
+        if diag.last_order_ts is not None:
+            bn_px_at_order = _load_binance_price_at_time(sym, diag.last_order_ts)
+            diag.bn_spot_px_at_order = bn_px_at_order
+            if diag.last_order_px and bn_px_at_order and bn_px_at_order > 0:
+                diag.px_ratio_order_over_bn_at_order = diag.last_order_px / bn_px_at_order
         diagnoses.append(diag)
 
     # Sort by descending |target_weight_pct|
@@ -349,7 +462,8 @@ def format_email_text(
     lines.append("")
     header = (
         f"{'Symbol':<10} {'Target%':>8} {'Notional$':>10} "
-        f"{'Reason':<18} {'Orders':>6} {'LastOrder':<19} {'Side':<4} {'Sz':>8} {'Px':>10} {'Status':<10}"
+        f"{'Reason':<18} {'Orders':>6} {'LastOrder':<19} {'Side':<4} {'Sz':>8} "
+        f"{'OrdPx':>10} {'Bn@Ord':>10} {'Ord/Bn@Ord':>11} {'Bn@Now':>10} {'Ord/Bn@Now':>11} {'Status':<10}"
     )
     lines.append(header)
     lines.append("-" * len(header))
@@ -357,7 +471,27 @@ def format_email_text(
     for d in diagnoses:
         last_ts_str = d.last_order_ts.strftime("%m-%d %H:%M") if d.last_order_ts else "-"
         sz_str = f"{d.last_order_sz:8.3f}" if d.last_order_sz is not None else " " * 8
-        px_str = f"{d.last_order_px:10.3f}" if d.last_order_px is not None and d.last_order_px != 0.0 else " " * 10
+        ord_px_str = f"{d.last_order_px:10.3f}" if d.last_order_px not in (None, 0.0) else " " * 10
+        bn_ord_str = (
+            f"{(d.bn_spot_px_at_order or 0):10.3f}"
+            if d.bn_spot_px_at_order not in (None, 0.0)
+            else " " * 10
+        )
+        ratio_ord_str = (
+            f"{d.px_ratio_order_over_bn_at_order:11.4f}"
+            if d.px_ratio_order_over_bn_at_order not in (None, 0.0)
+            else " " * 11
+        )
+        bn_now_str = (
+            f"{(d.bn_spot_px or 0):10.3f}"
+            if d.bn_spot_px not in (None, 0.0)
+            else " " * 10
+        )
+        ratio_now_str = (
+            f"{d.px_ratio_order_over_bn:11.4f}"
+            if d.px_ratio_order_over_bn not in (None, 0.0)
+            else " " * 11
+        )
         lines.append(
             f"{d.symbol:<10} "
             f"{100*d.target_weight_pct:8.2f} "
@@ -367,7 +501,11 @@ def format_email_text(
             f"{last_ts_str:<19} "
             f"{(d.last_order_side or '-'):4} "
             f"{sz_str} "
-            f"{px_str} "
+            f"{ord_px_str} "
+            f"{bn_ord_str} "
+            f"{ratio_ord_str} "
+            f"{bn_now_str} "
+            f"{ratio_now_str} "
             f"{(d.last_order_status or '-'):10}"
         )
 
@@ -396,6 +534,10 @@ def format_email_text(
     lines.append("  equity_used  = median(live_positions.equity_usd[date == D])")
     lines.append("  est_notional = abs(raw_weight) * equity_used")
     lines.append("  meta         = hl_meta[symbol]  # min_usd, min_units, size_step, tick_size")
+    lines.append("  bn_symbol   = symbol + 'USDT'  # simple spot mapping")
+    lines.append("  bn_px       = latest_close(binance.bn_spot_klines[bn_symbol, interval='1h'])")
+    lines.append("  ord_px      = last_order.limitPx")
+    lines.append("  ord_over_bn = ord_px / bn_px if bn_px else None")
     lines.append("  orders       = maicro_monitors.orders[coin == symbol")
     lines.append("                                        & timestamp in (run_ts - lookback, run_ts)]")
     lines.append("")
@@ -423,6 +565,31 @@ def _reason_color(reason: str) -> str:
     if reason == "no_order_unknown":
         return "#e5e7eb"  # gray-ish
     return "#ffffff"
+
+
+def _ord_bn_cell_style(ratio: Optional[float]) -> str:
+    """
+    Style for Ord/Bn cell:
+      - |ratio - 1| < 0.10%  → neutral
+      - 0.10%–0.30%         → light green (very close)
+      - 0.30%–1.00%         → yellow (mildly off)
+      - 1.00%–3.00%         → orange (noticeably off)
+      - ≥3.00%              → red (really out of market)
+    """
+    base = "padding:4px 8px; text-align:right;"
+    if ratio is None or ratio == 0.0:
+        return base
+    diff = abs(ratio - 1.0)
+    if diff < 0.001:  # < 10 bps → neutral
+        return base
+    if diff < 0.003:  # 10–30 bps
+        return base + " background-color:#dcfce7;"  # light green
+    if diff < 0.01:  # 30–100 bps
+        return base + " background-color:#fef9c3;"  # yellow
+    if diff < 0.03:  # 100–300 bps
+        return base + " background-color:#fed7aa;"  # orange
+    # ≥ 3% off
+    return base + " background-color:#fecaca;"  # red
 
 
 def format_email_html(
@@ -463,6 +630,26 @@ def format_email_html(
             last_ts_str = d.last_order_ts.strftime("%Y-%m-%d %H:%M") if d.last_order_ts else "-"
             sz_str = f"{d.last_order_sz:.4f}" if d.last_order_sz is not None else "-"
             px_str = f"{d.last_order_px:.4f}" if d.last_order_px is not None and d.last_order_px != 0.0 else "-"
+            bn_px_ord_str = (
+                f"{d.bn_spot_px_at_order:.4f}"
+                if d.bn_spot_px_at_order is not None and d.bn_spot_px_at_order != 0.0
+                else "-"
+            )
+            ratio_ord_str = (
+                f"{d.px_ratio_order_over_bn_at_order:.4f}"
+                if d.px_ratio_order_over_bn_at_order is not None and d.px_ratio_order_over_bn_at_order != 0.0
+                else "-"
+            )
+            bn_px_now_str = (
+                f"{d.bn_spot_px:.4f}"
+                if d.bn_spot_px is not None and d.bn_spot_px != 0.0
+                else "-"
+            )
+            ratio_now_str = (
+                f"{d.px_ratio_order_over_bn:.4f}"
+                if d.px_ratio_order_over_bn is not None and d.px_ratio_order_over_bn != 0.0
+                else "-"
+            )
             reduce_only_label = "true" if d.last_order_reduce_only else "false" if d.last_order_reduce_only is not None else "-"
 
             rows.append(
@@ -476,6 +663,10 @@ def format_email_html(
                 f"<td style='padding:4px 8px; text-align:center;'>{d.last_order_side or '-'}</td>"
                 f"<td style='padding:4px 8px; text-align:right;'>{sz_str}</td>"
                 f"<td style='padding:4px 8px; text-align:right;'>{px_str}</td>"
+                f"<td style='padding:4px 8px; text-align:right;'>{bn_px_ord_str}</td>"
+                f"<td style='padding:4px 8px; text-align:right;'>{ratio_ord_str}</td>"
+                f"<td style='padding:4px 8px; text-align:right;'>{bn_px_now_str}</td>"
+                f"<td style='{_ord_bn_cell_style(d.px_ratio_order_over_bn)}'>{ratio_now_str}</td>"
                 f"<td style='padding:4px 8px; text-align:left;'>{d.last_order_status or '-'}</td>"
                 f"<td style='padding:4px 8px; text-align:left;'>{d.last_order_type or '-'}</td>"
                 f"<td style='padding:4px 8px; text-align:center;'>{reduce_only_label}</td>"
@@ -519,6 +710,11 @@ orders       = maicro_monitors.orders[
     & (timestamp between run_ts - lookback and run_ts)
 ]
 
+bn_symbol   = symbol + "USDT"  # simple spot mapping
+bn_px       = latest_close(binance.bn_spot_klines[bn_symbol, interval="1h"])
+ord_px      = last_order.limitPx
+ord_over_bn = ord_px / bn_px if bn_px else None
+
 # Reason buckets (simplified)
 if symbol not in hl_meta:
     reason = "no_meta"
@@ -558,7 +754,11 @@ else:
           <th style="padding:4px 8px; text-align:left;">Last Order TS</th>
           <th style="padding:4px 8px; text-align:center;">Side</th>
           <th style="padding:4px 8px; text-align:right;">Sz</th>
-          <th style="padding:4px 8px; text-align:right;">Px</th>
+          <th style="padding:4px 8px; text-align:right;">Ord Px</th>
+          <th style="padding:4px 8px; text-align:right;">Bn Px @ Ord</th>
+          <th style="padding:4px 8px; text-align:right;">Ord/Bn @ Ord</th>
+          <th style="padding:4px 8px; text-align:right;">Bn Px @ Now</th>
+          <th style="padding:4px 8px; text-align:right;">Ord/Bn @ Now</th>
           <th style="padding:4px 8px; text-align:left;">Status</th>
           <th style="padding:4px 8px; text-align:left;">Type</th>
           <th style="padding:4px 8px; text-align:center;">reduceOnly</th>

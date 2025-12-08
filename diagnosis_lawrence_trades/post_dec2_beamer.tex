@@ -1,0 +1,122 @@
+% Post-Dec 2 Tracking Error Analysis - Beamer Slides
+\documentclass{beamer}
+\usetheme{Madrid}
+\usecolortheme{default}
+
+\title[Post--Dec 2 Tracking Error]{Post--Dec 2 Tracking Error Analysis}
+\subtitle{Lawrence vs Jianan Model}
+\author{Maicro Monitoring}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Context}
+  \begin{itemize}
+    \item Compare Lawrence's executed positions to Jianan's model.
+    \item Focus on post--Dec 2 period: 182 symbol--day observations.
+    \item Correct alignment: signal on day $T$ $\rightarrow$ holdings on $T+2$.
+    \item Goal: quantify \emph{how} and \emph{why} tracking is broken.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Top-Level Waterfall (Post--Dec 2)}
+  \begin{itemize}
+    \item Categories: MATCHED, MISSING\_POSITION, WRONG\_SIGN, MAGNITUDE\_ERROR.
+    \item Sample: 182 symbol--days.
+  \end{itemize}
+  \vspace{0.3cm}
+  \begin{tabular}{lrr}
+    \textbf{Category} & \textbf{Count} & \textbf{Share (\%)} \\
+    MATCHED           & 40             & 21.9 \\
+    MISSING\_POSITION & 84             & 45.9 \\
+    MAGNITUDE\_ERROR  & 36             & 19.9 \\
+    WRONG\_SIGN       & 22             & 12.3 \\
+  \end{tabular}
+  \vspace{0.3cm}
+  \begin{itemize}
+    \item Only \textbf{1 in 5} symbol--days match the model.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Missing Positions}
+  \begin{itemize}
+    \item Missing positions split by min notional:
+  \end{itemize}
+  \vspace{0.3cm}
+  \begin{tabular}{lrr}
+    \textbf{Reason}        & \textbf{Count} & \textbf{Share of Missing (\%)} \\
+    BELOW\_MIN\_NOTIONAL   & 72             & 86 \\
+    ABOVE\_MIN\_NOTIONAL   & 12             & 14 \\
+  \end{tabular}
+  \vspace{0.3cm}
+  \begin{itemize}
+    \item $\sim 40\%$ of all post--Dec 2 symbol--days are missing solely because the account is too small for exchange minimums.
+    \item $\sim 7\%$ are missing even though notional is above min\_usd $\Rightarrow$ genuine execution issues.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Wrong-Sign Positions and Day-Over-Day Flips}
+  \begin{itemize}
+    \item WRONG\_SIGN: actual direction disagrees with T+2 signal.
+    \item Re-check sign at T+1 (T-1 offset) and T+3 (delayed execution).
+    \item Post--Dec 2 wrong-sign breakdown (22 cases):
+      \begin{itemize}
+        \item $\sim 58\%$ DUE\_TO\_T1\_OFFSET.
+        \item $\sim 42\%$ DUE\_TO\_T3\_TIMING.
+        \item $0\%$ UNEXPLAINED.
+      \end{itemize}
+    \item As share of all 182 symbol--days:
+      \begin{itemize}
+        \item $\sim 7\%$ T1-driven wrong sign.
+        \item $\sim 5\%$ T3-driven wrong sign.
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Magnitude Errors}
+  \begin{itemize}
+    \item MAGNITUDE\_ERROR: right sign, but $> 2\%$ weight difference.
+    \item Post--Dec 2: 36 / 182 symbol--days ($\sim 20\%$).
+    \item Essentially unchanged from pre--Dec 2 ($\sim 21\%$).
+    \item Likely drivers:
+      \begin{itemize}
+        \item Partial fills.
+        \item Price drift.
+        \item Discrete lot sizes vs continuous model weights.
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Why Post--Dec 2 Is Still Broken}
+  \begin{itemize}
+    \item \textbf{Match rate is low:} only 21.9\% matched.
+    \item \textbf{Structural constraint:} $\sim 40\%$ of symbol--days are untradeable due to min notional vs \$2000 account.
+    \item \textbf{Execution + timing:}
+      \begin{itemize}
+        \item $\sim 7\%$ missing above min notional.
+        \item $\sim 12\%$ wrong sign (T-1/T-3 behavior).
+        \item $\sim 20\%$ magnitude errors.
+      \end{itemize}
+    \item Even after the ``fix'', roughly two-fifths of tracking error is due to execution / timing, and another two-fifths is baked in by account size.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Next Steps}
+  \begin{itemize}
+    \item Enforce a single T+2 alignment across signals, trading, and attribution.
+    \item Increase account size or explicitly zero small weights to avoid untradeable dust.
+    \item Restore detailed trade logging and add monitoring for:
+      \begin{itemize}
+        \item Wrong-sign positions.
+        \item Above-min missing positions.
+        \item Large magnitude errors.
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\end{document}
+

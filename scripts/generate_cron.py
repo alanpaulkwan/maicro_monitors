@@ -20,8 +20,8 @@ def main() -> None:
     print("")
 
     # 1. Hyperliquid ingest: hourly ping (buffer-only)
-    print("# 1. Hyperliquid ingest (buffer-only ping, hourly)")
-    print(f"0 * * * * cd {repo_root} && /usr/bin/python3 scheduled_processes/scheduled_ping_hyperliquid.py >> logs/hyperliquid_ping.log 2>&1")
+    print("# 1. Hyperliquid ingest (buffer-only ping, every 15m)")
+    print(f"*/15 * * * * cd {repo_root} && /usr/bin/python3 scheduled_processes/scheduled_ping_hyperliquid.py >> logs/hyperliquid_ping.log 2>&1")
     print("")
 
     # 1.2 Hyperliquid ingest: 3h flush to chenlin + Cloud

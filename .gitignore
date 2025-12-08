@@ -34,4 +34,8 @@ outputs/
 # user config
 .vscode/
 
+# Local secrets (never committed)
+config/local_secrets.json
+RESEND_API_KEY.txt
+
 # End

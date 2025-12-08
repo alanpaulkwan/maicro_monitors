@@ -50,6 +50,9 @@ PREFIX_TABLES: List[Tuple[str, str]] = [
     ("candles", "maicro_monitors.candles"),
 ]
 
+# Prefixes whose target tables use ReplacingMergeTree and should be optimized
+REPLACING_MERGE_TREE_PREFIXES = {"trades", "orders", "funding", "ledger", "candles"}
+
 
 def get_clients() -> Tuple[Client, Client]:
     local_client = Client(**CLICKHOUSE_LOCAL_CONFIG)
@@ -116,6 +119,15 @@ def flush_prefix(prefix: str, table: str, local_client: Client, remote_client: C
     try:
         local_client.execute(f"INSERT INTO {table} ({col_list}) VALUES", values)
         remote_client.execute(f"INSERT INTO {table} ({col_list}) VALUES", values)
+
+        if prefix in REPLACING_MERGE_TREE_PREFIXES:
+            print(f"[{prefix}] Running OPTIMIZE TABLE FINAL...")
+            try:
+                local_client.execute(f"OPTIMIZE TABLE {table} FINAL")
+                remote_client.execute(f"OPTIMIZE TABLE {table} FINAL")
+            except Exception as opt_e:
+                print(f"[{prefix}] Warning: OPTIMIZE failed: {opt_e}")
+
     except Exception as e:
         print(f"[{prefix}] ERROR inserting into ClickHouse: {e}")
         print(f"[{prefix}] Buffer files retained for retry.")

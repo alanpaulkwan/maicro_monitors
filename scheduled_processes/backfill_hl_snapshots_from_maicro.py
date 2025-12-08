@@ -36,7 +36,11 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if REPO_ROOT not in sys.path:
     sys.path.append(REPO_ROOT)
 
-from config.settings import CLICKHOUSE_LOCAL_CONFIG, CLICKHOUSE_REMOTE_CONFIG  # noqa: E402
+from config.settings import (  # noqa: E402
+    CLICKHOUSE_LOCAL_CONFIG,
+    CLICKHOUSE_REMOTE_CONFIG,
+    get_secret,
+)
 
 
 def get_old_client() -> Client:
@@ -44,7 +48,7 @@ def get_old_client() -> Client:
     return Client(
         host=os.getenv("CLICKHOUSE_LEGACY_HOST", "localhost"),
         user=os.getenv("CLICKHOUSE_LEGACY_USER", "claude"),
-        password=os.getenv("CLICKHOUSE_LEGACY_PASSWORD", ""),
+        password=get_secret("CLICKHOUSE_LEGACY_PASSWORD", ""),
     )
 
 

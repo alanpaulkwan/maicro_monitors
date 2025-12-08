@@ -33,21 +33,30 @@ def _now() -> datetime:
 
 def sync_account_and_positions(hl: HyperliquidClient, buffer_mgr: BufferManager) -> None:
     print("[account/positions] Fetching user state...")
-    state = hl.get_user_state()
+    try:
+        state_bundle = hl.fetch_account_state()
+    except Exception as e:
+        print(f"[account/positions] Error fetching state: {e}")
+        return
+
+    state = state_bundle.get("raw")
     if not state:
-        print("[account/positions] No user state returned.")
+        print("[account/positions] No user state returned in raw bundle.")
         return
 
     ts = _now()
+    print(f"[account/positions] Fetched state. Equity: {state_bundle['equity_usd']:.2f}, Margin Used: {state_bundle['margin_used_usd']}")
 
     # Account snapshot
+    # We use the robustly parsed values for equity and margin usage,
+    # and fall back to raw extraction for fields not covered by fetch_account_state.
     margin_summary = state.get("marginSummary", {}) or {}
     cross_margin_summary = state.get("crossMarginSummary", {}) or {}
 
     account_row = {
         "timestamp": ts,
-        "accountValue": float(margin_summary.get("accountValue", 0.0)),
-        "totalMarginUsed": float(margin_summary.get("totalMarginUsed", 0.0)),
+        "accountValue": state_bundle["equity_usd"],  # Robustly parsed equity
+        "totalMarginUsed": state_bundle["margin_used_usd"] if state_bundle["margin_used_usd"] is not None else float(margin_summary.get("totalMarginUsed", 0.0)),
         "totalNtlPos": float(margin_summary.get("totalNtlPos", 0.0)),
         "totalRawUsd": float(margin_summary.get("totalRawUsd", 0.0)),
         "marginUsed": float(cross_margin_summary.get("marginUsed", 0.0)),
@@ -58,6 +67,8 @@ def sync_account_and_positions(hl: HyperliquidClient, buffer_mgr: BufferManager)
     print(f"[account] Buffered 1 account snapshot at {ts}.")
 
     # Positions snapshot – only non‑zero positions
+    # fetch_account_state provides a simplified "positions" dict (symbol->size),
+    # but we need full details, so we iterate the raw assetPositions.
     positions = state.get("assetPositions", []) or []
     pos_rows: List[Dict[str, Any]] = []
     for p in positions:

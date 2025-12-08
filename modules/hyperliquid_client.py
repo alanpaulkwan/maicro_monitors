@@ -65,3 +65,99 @@ class HyperliquidClient:
             }
         }
         return self._post("/info", payload)
+
+    def fetch_account_state(self) -> Dict[str, Any]:
+        """
+        Fetch and parse account state into a standardized dictionary.
+        Returns:
+            {
+                "equity_usd": float,
+                "margin_used_usd": float | None,
+                "positions": Dict[str, float],  # symbol -> size
+                "meta": {"source": "sdk", "address": ...},
+                "raw": ...
+            }
+        """
+        data = self.get_user_state()
+
+        # --- equity & margin ---
+        equity = None
+        margin_used = None
+        ms = None
+        if isinstance(data, dict):
+            ms = data.get("marginSummary") or data.get("margin")
+        if isinstance(ms, dict):
+            for k in ("accountValue", "equity", "total"):
+                if k in ms:
+                    try:
+                        equity = float(ms[k])
+                        break
+                    except Exception:
+                        pass
+            for k in ("totalMarginUsed", "initialMargin", "maintMarginUsed",
+                      "marginUsed", "positionMargin"):
+                if k in ms:
+                    try:
+                        margin_used = float(ms[k])
+                        break
+                    except Exception:
+                        pass
+        if equity is None and isinstance(data, dict):
+            for k in ("accountValue", "equity", "total"):
+                if k in data:
+                    try:
+                        equity = float(data[k])
+                        break
+                    except Exception:
+                        pass
+        if equity is None:
+            equity = 0.0
+
+        # --- positions ---
+        positions: Dict[str, float] = {}
+        arrays = []
+
+        if isinstance(data, dict):
+            for key in ("assetPositions", "positions"):
+                arr = data.get(key)
+                if isinstance(arr, list):
+                    arrays.append(arr)
+            if not arrays:
+                acct = data.get("account")
+                if isinstance(acct, dict):
+                    for key in ("assetPositions", "positions"):
+                        arr = acct.get(key)
+                        if isinstance(arr, list):
+                            arrays.append(arr)
+
+        def _f(v):
+            try:
+                return float(v)
+            except Exception:
+                return 0.0
+
+        for arr in arrays:
+            for item in arr:
+                if not isinstance(item, dict):
+                    continue
+                pos = item.get("position") if "position" in item else item
+                if not isinstance(pos, dict):
+                    continue
+                sym = pos.get("coin") or pos.get("symbol")
+                szi = None
+                for k in ("szi", "size", "positionSize"):
+                    if k in pos:
+                        szi = pos[k]
+                        break
+                if sym is None or szi is None:
+                    continue
+                su = str(sym).strip().upper()
+                positions[su] = positions.get(su, 0.0) + _f(szi)
+
+        return {
+            "equity_usd": float(equity),
+            "margin_used_usd": float(margin_used) if margin_used is not None else None,
+            "positions": positions,
+            "meta": {"source": "sdk", "address": self.address},
+            "raw": data,
+        }

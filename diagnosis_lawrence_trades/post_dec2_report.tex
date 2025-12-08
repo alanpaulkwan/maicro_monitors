@@ -1,0 +1,162 @@
+% Post-Dec 2 Tracking Error Analysis - Article Report
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{hyperref}
+
+\title{Post–Dec 2 Tracking Error Analysis\\\large Lawrence vs Jianan Model}
+\author{Maicro Monitoring}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Context}
+
+We analyze how well Lawrence's executed positions track Jianan's crypto model
+for the period starting \textbf{2025-12-02} (``post--Dec 2'').
+Positions are compared at the \emph{holdings date} level against the model's
+target weights, aligned using the correct \textbf{T+2} convention:
+signals from day $T$ should correspond to holdings on day $T+2$.
+
+In this period there are
+\[
+N_{\text{post}} = 182
+\]
+symbol--day observations.
+
+\section{Top-Level Waterfall}
+
+Each symbol--day is classified into one of five mutually exclusive categories:
+MATCHED, MISSING\_POSITION, WRONG\_SIGN, MAGNITUDE\_ERROR, and EXTRA\_POSITION.
+Empirically, EXTRA\_POSITION is negligible in this sample.
+
+\begin{table}[h]
+  \centering
+  \caption{Waterfall Breakdown (Post--Dec 2, 182 position-days)}
+  \begin{tabular}{lrr}
+    \toprule
+    Category          & Count & Share (\%) \\
+    \midrule
+    MATCHED           & 40    & 21.9 \\
+    MISSING\_POSITION & 84    & 45.9 \\
+    MAGNITUDE\_ERROR  & 36    & 19.9 \\
+    WRONG\_SIGN       & 22    & 12.3 \\
+    EXTRA\_POSITION   & $\approx 0$ & $< 1$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Only about $22\%$ of symbol--days match the model within tolerance; the remaining
+$78\%$ are missing, wrong sign, or mis-sized.
+
+\section{Missing Positions}
+
+For MISSING\_POSITION cases, we compute the intended notional
+\[
+\text{target\_notional}
+  = |\text{target\_weight}| \times \text{portfolio\_value}
+\]
+and compare it to the exchange's minimum notional requirement, $\text{min\_usd}$,
+derived from the \texttt{hl\_meta} table.
+
+\begin{table}[h]
+  \centering
+  \caption{Missing Positions by Root Cause (Post--Dec 2)}
+  \begin{tabular}{lrr}
+    \toprule
+    Reason              & Count & Share of Missing (\%) \\
+    \midrule
+    BELOW\_MIN\_NOTIONAL & 72   & 86 \\
+    ABOVE\_MIN\_NOTIONAL & 12   & 14 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Relative to \emph{all} 182 symbol--days:
+\begin{itemize}
+  \item $\approx 39.6\%$ are missing because target notional is below
+    the exchange's minimum (structural constraint for a \$2000 book).
+  \item $\approx 6.6\%$ are missing despite being above the minimum---these are
+    genuine execution or infra failures.
+\end{itemize}
+
+\section{Wrong-Sign Positions and Day-Over-Day Flips}
+
+WRONG\_SIGN cases are those where the actual exposure direction
+disagrees with the aligned T+2 signal, with non-trivial magnitude.
+For each such symbol--day we re-check the sign of the model at
+neighboring offsets:
+\begin{itemize}
+  \item $T+1$ (using signal from $T-1$ in practice, ``T-1 offset''), and
+  \item $T+3$ (delayed execution, ``T-3 timing'').
+\end{itemize}
+
+We classify each wrong-sign row as:
+\begin{itemize}
+  \item \textbf{DUE\_TO\_T1\_OFFSET} if the actual sign matches the T+1-aligned
+    signal but not T+2.
+  \item \textbf{DUE\_TO\_T3\_TIMING} if the actual sign matches the T+3-aligned
+    signal but not T+2 and not T+1.
+  \item \textbf{UNEXPLAINED} otherwise.
+\end{itemize}
+
+For the post--Dec 2 period (22 wrong-sign cases), the breakdown from the
+existing analysis is:
+\begin{itemize}
+  \item $\approx 58\%$ DUE\_TO\_T1\_OFFSET,
+  \item $\approx 42\%$ DUE\_TO\_T3\_TIMING,
+  \item $0\%$ UNEXPLAINED.
+\end{itemize}
+Equivalently, about $13$ of 22 wrong-sign trades are explained by using the
+wrong day (T-1), and about $9$ are consistent with a one-day delay (T-3).
+
+As a share of all 182 symbol--days:
+\begin{align*}
+  \text{T1-driven wrong sign} &\approx \frac{13}{182} \approx 7.1\%, \\
+  \text{T3-driven wrong sign} &\approx \frac{9}{182} \approx 4.9\%.
+\end{align*}
+
+Thus roughly $12\%$ of all post--Dec 2 symbol--days are wrong sign,
+and nearly all of those are due to day-over-day flips combined with
+misaligned execution timing.
+
+\section{Magnitude Errors}
+
+MAGNITUDE\_ERROR cases have the correct sign but differ from the target weight
+by more than $2\%$ of portfolio value:
+\[
+|\text{target\_weight} - \text{actual\_weight}| > 0.02.
+\]
+
+In the post--Dec 2 period:
+\begin{itemize}
+  \item 36 out of 182 symbol--days ($\approx 19.8\%$) fall into MAGNITUDE\_ERROR.
+  \item This rate is essentially unchanged from the pre--Dec 2 period ($\approx 21\%$),
+    indicating that sizing issues (partial fills, price drift, lot constraints)
+    are still a major component of tracking error.
+\end{itemize}
+
+\section{Why Post--Dec 2 Is Still Broken}
+
+For the post--Dec 2 period:
+\begin{itemize}
+  \item Only $21.9\%$ of symbol--days match the model.
+  \item About $39.6\%$ are structurally untradeable (BELOW\_MIN\_NOTIONAL).
+  \item The remaining $\approx 38.5\%$ are execution or infra issues:
+    \begin{itemize}
+      \item $\sim 6.6\%$ missing above min notional,
+      \item $\sim 12\%$ wrong sign (mostly T-1 or T-3 timing),
+      \item $\sim 20\%$ magnitude errors.
+    \end{itemize}
+\end{itemize}
+
+In other words, even after the offset ``fix'', roughly two-fifths of the
+tracking error is due to mismatched timing and execution logic, and roughly
+another two-fifths is baked in by running too granular a model on a \$2000
+account under exchange minimums.
+
+\end{document}
+
