@@ -1,0 +1,124 @@
+[flush_hyperliquid_buffers] Starting dual-target flush...
+[account] Found 8 buffered files. Loading...
+Traceback (most recent call last):
+  File "/home/apkwan/standalone_git/maicro_monitors/scheduled_processes/flush_hyperliquid_buffers.py", line 161, in <module>
+    main()
+  File "/home/apkwan/standalone_git/maicro_monitors/scheduled_processes/flush_hyperliquid_buffers.py", line 155, in main
+    flush_prefix(prefix, table, local_client, remote_client)
+  File "/home/apkwan/standalone_git/maicro_monitors/scheduled_processes/flush_hyperliquid_buffers.py", line 109, in flush_prefix
+    cols = _common_insert_columns(table, local_client, remote_client, df)
+  File "/home/apkwan/standalone_git/maicro_monitors/scheduled_processes/flush_hyperliquid_buffers.py", line 73, in _common_insert_columns
+    local_cols = describe(local_client)
+  File "/home/apkwan/standalone_git/maicro_monitors/scheduled_processes/flush_hyperliquid_buffers.py", line 70, in describe
+    rows = client.execute(f"DESCRIBE TABLE {table}")
+  File "/home/apkwan/.local/lib/python3.10/site-packages/clickhouse_driver/client.py", line 361, in execute
+    with self.disconnect_on_error(query, settings):
+  File "/usr/lib/python3.10/contextlib.py", line 135, in __enter__
+    return next(self.gen)
+  File "/home/apkwan/.local/lib/python3.10/site-packages/clickhouse_driver/client.py", line 305, in disconnect_on_error
+    self.establish_connection(settings)
+  File "/home/apkwan/.local/lib/python3.10/site-packages/clickhouse_driver/client.py", line 292, in establish_connection
+    self.connection.force_connect()
+  File "/home/apkwan/.local/lib/python3.10/site-packages/clickhouse_driver/connection.py", line 254, in force_connect
+    self.connect()
+  File "/home/apkwan/.local/lib/python3.10/site-packages/clickhouse_driver/connection.py", line 395, in connect
+    return self._init_connection(host, port)
+  File "/home/apkwan/.local/lib/python3.10/site-packages/clickhouse_driver/connection.py", line 339, in _init_connection
+    self.receive_hello()
+  File "/home/apkwan/.local/lib/python3.10/site-packages/clickhouse_driver/connection.py", line 513, in receive_hello
+    raise self.receive_exception()
+clickhouse_driver.errors.ServerException: Code: 516.
+DB::Exception: maicrobot: Authentication failed: password is incorrect, or there is no user with such name.. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::AccessControl::authenticate(DB::Credentials const&, Poco::Net::IPAddress const&, DB::ClientInfo const&) const @ 0x00000000173a5523
+4. DB::Session::authenticate(DB::Credentials const&, Poco::Net::SocketAddress const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018c485c4
+5. DB::Session::authenticate(String const&, String const&, Poco::Net::SocketAddress const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018c47ab2
+6. DB::TCPHandler::receiveHello() @ 0x000000001a6ec559
+7. DB::TCPHandler::runImpl() @ 0x000000001a6dc993
+8. DB::TCPHandler::run() @ 0x000000001a702b19
+9. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+10. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+11. Poco::PooledThread::run() @ 0x000000001f78a607
+12. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+13. start_thread @ 0x0000000000094ac3
+14. clone3 @ 0x00000000001268c0
+
+[flush_hyperliquid_buffers] Starting dual-target flush...
+[account] Found 20 buffered files. Loading...
+Traceback (most recent call last):
+  File "/home/apkwan/standalone_git/maicro_monitors/scheduled_processes/flush_hyperliquid_buffers.py", line 161, in <module>
+    main()
+  File "/home/apkwan/standalone_git/maicro_monitors/scheduled_processes/flush_hyperliquid_buffers.py", line 155, in main
+    flush_prefix(prefix, table, local_client, remote_client)
+  File "/home/apkwan/standalone_git/maicro_monitors/scheduled_processes/flush_hyperliquid_buffers.py", line 109, in flush_prefix
+    cols = _common_insert_columns(table, local_client, remote_client, df)
+  File "/home/apkwan/standalone_git/maicro_monitors/scheduled_processes/flush_hyperliquid_buffers.py", line 73, in _common_insert_columns
+    local_cols = describe(local_client)
+  File "/home/apkwan/standalone_git/maicro_monitors/scheduled_processes/flush_hyperliquid_buffers.py", line 70, in describe
+    rows = client.execute(f"DESCRIBE TABLE {table}")
+  File "/home/apkwan/.local/lib/python3.10/site-packages/clickhouse_driver/client.py", line 361, in execute
+    with self.disconnect_on_error(query, settings):
+  File "/usr/lib/python3.10/contextlib.py", line 135, in __enter__
+    return next(self.gen)
+  File "/home/apkwan/.local/lib/python3.10/site-packages/clickhouse_driver/client.py", line 305, in disconnect_on_error
+    self.establish_connection(settings)
+  File "/home/apkwan/.local/lib/python3.10/site-packages/clickhouse_driver/client.py", line 292, in establish_connection
+    self.connection.force_connect()
+  File "/home/apkwan/.local/lib/python3.10/site-packages/clickhouse_driver/connection.py", line 254, in force_connect
+    self.connect()
+  File "/home/apkwan/.local/lib/python3.10/site-packages/clickhouse_driver/connection.py", line 395, in connect
+    return self._init_connection(host, port)
+  File "/home/apkwan/.local/lib/python3.10/site-packages/clickhouse_driver/connection.py", line 339, in _init_connection
+    self.receive_hello()
+  File "/home/apkwan/.local/lib/python3.10/site-packages/clickhouse_driver/connection.py", line 513, in receive_hello
+    raise self.receive_exception()
+clickhouse_driver.errors.ServerException: Code: 516.
+DB::Exception: maicrobot: Authentication failed: password is incorrect, or there is no user with such name.. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::AccessControl::authenticate(DB::Credentials const&, Poco::Net::IPAddress const&, DB::ClientInfo const&) const @ 0x00000000173a5523
+4. DB::Session::authenticate(DB::Credentials const&, Poco::Net::SocketAddress const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018c485c4
+5. DB::Session::authenticate(String const&, String const&, Poco::Net::SocketAddress const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018c47ab2
+6. DB::TCPHandler::receiveHello() @ 0x000000001a6ec559
+7. DB::TCPHandler::runImpl() @ 0x000000001a6dc993
+8. DB::TCPHandler::run() @ 0x000000001a702b19
+9. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+10. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+11. Poco::PooledThread::run() @ 0x000000001f78a607
+12. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+13. start_thread @ 0x0000000000094ac3
+14. clone3 @ 0x00000000001268c0
+
+[flush_hyperliquid_buffers] Starting dual-target flush...
+[account] Found 34 buffered files. Loading...
+[account] Inserting 34 rows into maicro_monitors.account_snapshots (timestamp, accountValue, totalMarginUsed, totalNtlPos, totalRawUsd, marginUsed, withdrawable) on both local and remote...
+[account] Flush complete; buffer cleared.
+[positions] Found 35 buffered files. Loading...
+[positions] Inserting 1050 rows into maicro_monitors.positions_snapshots (timestamp, coin, szi, entryPx, positionValue, unrealizedPnl, returnOnEquity, liquidationPx, leverage, maxLeverage, marginUsed) on both local and remote...
+[positions] Flush complete; buffer cleared.
+[trades] Found 35 buffered files. Loading...
+[trades] Inserting 69300 rows into maicro_monitors.trades (coin, side, px, sz, time, hash, startPosition, dir, closedPnl, oid, fee, tid) on both local and remote...
+[trades] Running OPTIMIZE TABLE FINAL...
+[trades] Flush complete; buffer cleared.
+[orders] Found 35 buffered files. Loading...
+[orders] Inserting 70000 rows into maicro_monitors.orders (coin, side, limitPx, sz, oid, timestamp, status, orderType, reduceOnly) on both local and remote...
+[orders] Running OPTIMIZE TABLE FINAL...
+[orders] Flush complete; buffer cleared.
+[funding] Found 35 buffered files. Loading...
+[funding] Inserting 17500 rows into maicro_monitors.funding_payments (time, coin, usdc, szi, fundingRate, tid) on both local and remote...
+[funding] Running OPTIMIZE TABLE FINAL...
+[funding] Flush complete; buffer cleared.
+[ledger] No buffered files to flush.
+[candles] Found 35 buffered files. Loading...
+[candles] Inserting 11970 rows into maicro_monitors.candles (coin, interval, ts, open, high, low, close, volume) on both local and remote...
+[candles] Running OPTIMIZE TABLE FINAL...
+[candles] Flush complete; buffer cleared.
+[meta] Found 3 buffered files. Loading...
+[meta] Inserting 666 rows into maicro_monitors.hl_meta (symbol, sz_decimals, px_decimals, size_step, tick_size, min_units, min_usd, updated_at) on both local and remote...
+[meta] Flush complete; buffer cleared.
+[flush_hyperliquid_buffers] Done.

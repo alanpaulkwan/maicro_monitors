@@ -1,37 +1,24 @@
 #!/usr/bin/env python3
 """
-Daily email: target vs actual positions (Jianan v6 vs live).
+Daily Tracking Error & Email Report.
+------------------------------------
+Calculates tracking error for multiple lags (T0..T3) and sends a summary email.
 
-Targets:
-  - `maicro_logs.positions_jianan_v6` (earliest row per (date, symbol) with finite, non-zero weight & pred_ret)
+Data Sources:
+  - Actuals: `maicro_monitors.positions_snapshots` + `account_snapshots`
+  - Targets: `maicro_logs.positions_jianan_v6`
 
-Actuals:
-  - `maicro_logs.live_positions` (kind='current')
-    • we take the latest available `target_date` and the last row per (target_date, symbol) by ts
-
-Logic:
-  - Pick latest target `date` from positions_jianan_v6.
-  - Map to expected actual `target_date = date + OFFSET_DAYS` (default: 2).
-  - Normalize weights separately on long/short sides.
-  - Email summary: coverage stats + **all target positions**
-    with color-coded differences (HTML table):
-      - red  = actual < target (too little)
-      - green = actual > target (too much)
-
-Environment:
-  - `RESEND_API_KEY`   (required to send email)
-  - `ALERT_EMAIL`      (recipient, defaults to alanpaulkwan@gmail.com)
-  - `ALERT_FROM_EMAIL` (optional, default 'Maicro Monitors <alerts@resend.dev>')
-  - `TARGET_ACTUAL_OFFSET_DAYS` (optional, default '2')
+Outputs:
+  - Inserts into `maicro_monitors.tracking_error_multilag`
+  - Sends email via Resend
 """
 
 import os
 import sys
-from datetime import timedelta
-from typing import Optional
-
-import numpy as np
+from datetime import datetime, timedelta, date
+from typing import Optional, Dict, List, Tuple
 import pandas as pd
+import numpy as np
 import requests
 
 # Make repo modules importable
@@ -39,537 +26,282 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.p
 if REPO_ROOT not in sys.path:
     sys.path.append(REPO_ROOT)
 
-from modules.clickhouse_client import query_df  # type: ignore  # noqa: E402
+from modules.clickhouse_client import query_df, execute
+from config.settings import get_secret
 
-
-RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+RESEND_API_KEY = get_secret("RESEND_API_KEY")
 TO_EMAIL = os.getenv("ALERT_EMAIL", "alanpaulkwan@gmail.com")
 FROM_EMAIL = os.getenv("ALERT_FROM_EMAIL", "Maicro Monitors <alerts@resend.dev>")
-OFFSET_DAYS = int(os.getenv("TARGET_ACTUAL_OFFSET_DAYS", "2"))
-
+STRATEGY_ID = "jianan_v6"
 
 def _normalize_weights(df: pd.DataFrame, weight_col: str = "weight") -> pd.Series:
     """
-    Normalize weights so longs sum to 1 and shorts sum to 1 (abs).
-    Returns a Series aligned to df.index.
+    Standard normalization: assume raw weights are correct target allocations.
+    If they are not (e.g. they sum to > 100 or are raw scores), this needs adjustment.
+    For now, we trust the model output 'weight'.
     """
     if df.empty or weight_col not in df.columns:
         return pd.Series(index=df.index, dtype=float)
+    return df[weight_col].astype(float).fillna(0.0)
 
-    weights = df[weight_col].astype(float)
-    long_mask = weights > 0
-    short_mask = weights < 0
-
-    long_sum = weights[long_mask].sum()
-    short_sum = weights[short_mask].abs().sum()
-
-    normalized = pd.Series(index=df.index, dtype=float)
-    if long_sum > 0:
-        normalized[long_mask] = weights[long_mask] / long_sum
-    if short_sum > 0:
-        normalized[short_mask] = weights[short_mask] / short_sum
-    normalized = normalized.fillna(0.0)
-    return normalized
-
-
-def _load_targets_for_date(target_date: pd.Timestamp) -> pd.DataFrame:
+def _load_actuals_snapshot(snapshot_date: date) -> Tuple[pd.DataFrame, float]:
     """
-    Earliest row per (date, symbol) with finite, non-zero weight & pred_ret.
+    Load the last snapshot of the given date from maicro_monitors.
+    Returns (positions_df, equity_usd).
+    Uses a single query with join/subquery to ensure timestamp alignment.
     """
     sql = """
-        SELECT date, symbol, weight
+    WITH latest_ts AS (
+        SELECT max(timestamp) as ts
+        FROM maicro_monitors.account_snapshots
+        WHERE toDate(timestamp) = %(d)s
+    )
+    SELECT 
+        p.coin as symbol, 
+        p.positionValue, 
+        p.szi,
+        a.accountValue as equity
+    FROM maicro_monitors.positions_snapshots p
+    JOIN maicro_monitors.account_snapshots a ON p.timestamp = a.timestamp
+    WHERE p.timestamp = (SELECT ts FROM latest_ts)
+      AND a.timestamp = (SELECT ts FROM latest_ts)
+    """
+    df = query_df(sql, params={"d": snapshot_date})
+    
+    if df.empty:
+        return pd.DataFrame(), 0.0
+        
+    equity = float(df.iloc[0]["equity"])
+    if equity == 0:
+        return pd.DataFrame(), 0.0
+
+    df["symbol"] = df["symbol"].str.upper().str.strip()
+    df["actual_weight"] = df["positionValue"] / equity
+    
+    return df[["symbol", "actual_weight", "szi", "positionValue"]], equity
+
+def _load_targets(target_date: date) -> pd.DataFrame:
+    """
+    Load target weights from maicro_logs.positions_jianan_v6 for a specific date.
+    """
+    sql = """
+        SELECT symbol, weight
         FROM (
-            SELECT date, symbol, weight, inserted_at
+            SELECT symbol, weight, inserted_at
             FROM maicro_logs.positions_jianan_v6
-            WHERE date = %(date)s
+            WHERE date = %(d)s
               AND weight IS NOT NULL AND isFinite(weight) AND weight != 0
               AND pred_ret IS NOT NULL AND isFinite(pred_ret)
-            ORDER BY date, symbol, inserted_at
-            LIMIT 1 BY date, symbol
+            ORDER BY symbol, inserted_at DESC
+            LIMIT 1 BY symbol
         )
     """
-    df = query_df(sql, params={"date": target_date.date()})
+    df = query_df(sql, params={"d": target_date})
     if df.empty:
-        return df
+        return pd.DataFrame(columns=["symbol", "target_weight"])
+    
+    df["symbol"] = df["symbol"].str.upper().str.strip()
+    df["target_weight"] = df["weight"].astype(float)
+    return df[["symbol", "target_weight"]]
 
-    df["date"] = pd.to_datetime(df["date"]).dt.date
-    df["symbol"] = df["symbol"].astype(str).str.upper().str.strip()
-    df["weight"] = df["weight"].astype(float)
-    df["weight_norm"] = _normalize_weights(df, "weight")
-    return df
-
-
-def _load_prev_targets_for_date(target_date: pd.Timestamp, steps: int = 1) -> Optional[pd.DataFrame]:
+def calculate_te(targets: pd.DataFrame, actuals: pd.DataFrame) -> Tuple[float, pd.DataFrame]:
     """
-    Load targets for the Nth latest date strictly before `target_date`.
-
-    steps=1 → previous day (T-1 in signal space)
-    steps=2 → two days back (T-2), etc.
-    Returns None if there are not enough earlier dates.
+    Calculate Tracking Error (Sum of Absolute Differences) and return merged DF.
+    TE = Sum(|Target - Actual|)
     """
-    cutoff = target_date.date()
-    prev_date: Optional[pd.Timestamp] = None
+    merged = pd.merge(targets, actuals, on="symbol", how="outer").fillna(0.0)
+    merged["diff"] = merged["actual_weight"] - merged["target_weight"]
+    merged["abs_diff"] = merged["diff"].abs()
+    
+    te = merged["abs_diff"].sum()
+    return te, merged
 
-    for _ in range(steps):
-        sql = """
-            SELECT max(date) AS max_date
-            FROM maicro_logs.positions_jianan_v6
-            WHERE date < %(cutoff)s
-        """
-        df = query_df(sql, params={"cutoff": cutoff})
-        if df.empty or pd.isna(df.iloc[0]["max_date"]):
-            return None
-        prev_date = pd.to_datetime(df.iloc[0]["max_date"]).normalize()
-        cutoff = prev_date.date()
-
-    prev_targets = _load_targets_for_date(prev_date)
-    if prev_targets.empty:
-        return None
-
-    prev_targets = prev_targets.copy()
-    prev_targets["prev_date"] = prev_date.date()
-    return prev_targets
-
-
-def _load_next_targets_for_date(target_date: pd.Timestamp) -> Optional[pd.DataFrame]:
-    """
-    Load targets for the earliest date strictly after `target_date`.
-    Returns None if no later date exists.
-    """
+def record_te(date_val: date, lag: int, te: float, target_date: date):
+    """Insert TE record into ClickHouse."""
     sql = """
-        SELECT min(date) AS min_date
-        FROM maicro_logs.positions_jianan_v6
-        WHERE date > %(cutoff)s
+    INSERT INTO maicro_monitors.tracking_error_multilag
+    (date, strategy_id, lag, te, target_date, timestamp)
+    VALUES
+    (%(date)s, %(strat)s, %(lag)s, %(te)s, %(tgt)s, now())
     """
-    df = query_df(sql, params={"cutoff": target_date.date()})
-    if df.empty or pd.isna(df.iloc[0]["min_date"]):
-        return None
-
-    next_date = pd.to_datetime(df.iloc[0]["min_date"]).normalize()
-    next_targets = _load_targets_for_date(next_date)
-    if next_targets.empty:
-        return None
-
-    next_targets = next_targets.copy()
-    next_targets["next_date"] = next_date.date()
-    return next_targets
-def _load_latest_run_context() -> Optional[tuple[pd.Timestamp, pd.Timestamp]]:
-    """
-    Latest live run context from `maicro_logs.live_positions` (kind='current').
-
-    Returns:
-        (target_date, run_ts)
-
-    Where:
-      - target_date is the model signal date D (same key as positions_jianan_v6.date)
-      - run_ts is the actual run timestamp for that target_date.
-    """
-    sql = """
-        SELECT target_date, max(ts) AS ts
-        FROM maicro_logs.live_positions
-        WHERE kind = 'current'
-        GROUP BY target_date
-        ORDER BY ts DESC
-        LIMIT 1
-    """
-    df = query_df(sql)
-    if df.empty or pd.isna(df.iloc[0]["target_date"]) or pd.isna(df.iloc[0]["ts"]):
-        return None
-    target_date = pd.to_datetime(df.iloc[0]["target_date"]).normalize()
-    run_ts = pd.to_datetime(df.iloc[0]["ts"])
-    return target_date, run_ts
-
-
-def _load_actuals_for_date(actual_date: pd.Timestamp) -> pd.DataFrame:
-    """
-    Last row per (target_date, symbol, kind='current') ordered by ts.
-    """
-    sql = """
-        SELECT target_date, symbol, qty, usd, equity_usd
-        FROM (
-            SELECT *, row_number() OVER(PARTITION BY target_date, symbol, kind ORDER BY ts DESC) AS rn
-            FROM maicro_logs.live_positions
-            WHERE kind = 'current' AND target_date = %(date)s
-        )
-        WHERE rn = 1
-    """
-    df = query_df(sql, params={"date": actual_date.date()})
-    if df.empty:
-        return df
-
-    df["target_date"] = pd.to_datetime(df["target_date"]).dt.date
-    df["symbol"] = df["symbol"].astype(str).str.upper().str.strip()
-    df["usd"] = df["usd"].astype(float)
-    df["equity_usd"] = df["equity_usd"].astype(float)
-    # Avoid division by zero
-    df["weight"] = df.apply(
-        lambda row: row["usd"] / row["equity_usd"] if row["equity_usd"] not in (0, None, np.nan) else 0.0,
-        axis=1,
-    )
-    df["weight_norm"] = _normalize_weights(df, "weight")
-    return df
-
-
-def build_comparison(targets: pd.DataFrame, actuals: pd.DataFrame) -> pd.DataFrame:
-    """
-    Join on symbol and compute normalized weight differences.
-    """
-    t = targets[["symbol", "weight_norm"]].rename(columns={"weight_norm": "target_weight_pct"})
-    a = actuals[["symbol", "weight_norm"]].rename(columns={"weight_norm": "actual_weight_pct"})
-
-    merged = t.merge(a, on="symbol", how="outer")
-    merged["target_weight_pct"] = merged["target_weight_pct"].fillna(0.0)
-    merged["actual_weight_pct"] = merged["actual_weight_pct"].fillna(0.0)
-
-    merged["has_target"] = merged["target_weight_pct"] != 0.0
-    merged["has_actual"] = merged["actual_weight_pct"] != 0.0
-    merged["weight_diff"] = merged["actual_weight_pct"] - merged["target_weight_pct"]
-    merged["abs_diff"] = merged["weight_diff"].abs()
-
-    # Wrong sign: both non-zero, target and actual have opposite signs
-    merged["wrong_sign"] = (
-        merged["has_target"]
-        & merged["has_actual"]
-        & (merged["target_weight_pct"] != 0.0)
-        & (merged["actual_weight_pct"] != 0.0)
-        & (np.sign(merged["target_weight_pct"]) != np.sign(merged["actual_weight_pct"]))
-    )
-
-    merged = merged.sort_values("abs_diff", ascending=False).reset_index(drop=True)
-    return merged
-
-
-def format_email_text(
-    target_date: pd.Timestamp,
-    run_ts: pd.Timestamp,
-    comp: pd.DataFrame,
-    offset_days: int,
-) -> str:
-    """Plain-text fallback body (no colors)."""
-    lines: list[str] = []
-    lines.append("MAICRO: Targets vs Actual Positions")
-    lines.append("===================================")
-    lines.append(f"Target (signal) date [positions_jianan_v6.date / live_positions.target_date]: {target_date.date()}")
-    lines.append(
-        f"Run timestamp [live_positions.ts, kind='current']: {run_ts} "
-        f"(run_ts.date - target_date = {offset_days:+d} days)"
-    )
-    lines.append("")
-    lines.append("Explanation: model targets are keyed by positions_jianan_v6.date = D.")
-    lines.append("When the live run executes later, rows are stored in maicro_logs.live_positions")
-    lines.append("with target_date = D and ts = actual run time. This email always uses the")
-    lines.append("latest ts (kind='current') and compares its weights to the targets for that D.")
-    lines.append("")
-
-    total_rows = len(comp)
-    both = comp["has_target"] & comp["has_actual"]
-    target_only = comp["has_target"] & ~comp["has_actual"]
-    actual_only = ~comp["has_target"] & comp["has_actual"]
-
-    lines.append("Coverage")
-    lines.append("--------")
-    lines.append(f"Total symbols in union : {total_rows}")
-    lines.append(f"Targets only            : {int(target_only.sum())}")
-    lines.append(f"Actuals only            : {int(actual_only.sum())}")
-    lines.append(f"Both target & actual    : {int(both.sum())}")
-
-    if both.any():
-        matched = comp[both]
-        mean_abs = matched["abs_diff"].mean()
-        median_abs = matched["abs_diff"].median()
-        max_abs = matched["abs_diff"].max()
-        lines.append("")
-        lines.append("Matched positions (weight diff stats)")
-        lines.append("-------------------------------------")
-        lines.append(f"Mean |diff|   : {100*mean_abs:5.2f}%")
-        lines.append(f"Median |diff| : {100*median_abs:5.2f}%")
-        lines.append(f"Max |diff|    : {100*max_abs:5.2f}%")
-
-    # Detailed per-symbol view (all target positions, sorted by |diff|)
-    view = comp[comp["has_target"]].copy()
-    lines.append("")
-    lines.append("All target symbols (sorted by |weight diff|)")
-    lines.append("--------------------------------------------")
-    lines.append(f"{'Symbol':<10} {'Target%':>9} {'Actual%':>9} {'Diff%':>9} {'Wrong?':>7} {'Prev1%':>8} {'Prev2%':>8} {'Next%':>8}")
-    lines.append(f"{'-'*10} {'-'*9} {'-'*9} {'-'*9} {'-'*7} {'-'*8} {'-'*8} {'-'*8}")
-
-    for _, row in view.iterrows():
-        sym = row["symbol"]
-        t_pct = 100 * row["target_weight_pct"]
-        a_pct = 100 * row["actual_weight_pct"]
-        d_pct = 100 * row["weight_diff"]
-        prev1 = row.get("prev1_target_weight_pct", None)
-        prev2 = row.get("prev2_target_weight_pct", None)
-        nextv = row.get("next_target_weight_pct", None)
-        prev1_pct_str = f"{100 * float(prev1):8.2f}" if prev1 is not None and not pd.isna(prev1) else " " * 8
-        prev2_pct_str = f"{100 * float(prev2):8.2f}" if prev2 is not None and not pd.isna(prev2) else " " * 8
-        next_pct_str = f"{100 * float(nextv):8.2f}" if nextv is not None and not pd.isna(nextv) else " " * 8
-        wrong = row.get("wrong_sign", False)
-        wrong_str = "WRONG" if wrong else ""
-        lines.append(
-            f"{sym:<10} {t_pct:9.2f} {a_pct:9.2f} {d_pct:9.2f} {wrong_str:>7} {prev1_pct_str} {prev2_pct_str} {next_pct_str}"
-        )
-
-    lines.append("")
-    lines.append("Notes:")
-    lines.append("- Target weights from maicro_logs.positions_jianan_v6 (earliest per date,symbol).")
-    lines.append("- Actual weights from maicro_logs.live_positions (kind='current').")
-    lines.append("- Long and short weights are normalized separately to sum to 1.")
-
-    return "\n".join(lines)
-
+    params = {
+        "date": date_val,
+        "strat": STRATEGY_ID,
+        "lag": lag,
+        "te": te,
+        "tgt": target_date
+    }
+    try:
+        execute(sql, params=params)
+    except Exception as e:
+        print(f"Error inserting TE for {date_val} lag {lag}: {e}")
 
 def format_email_html(
-    target_date: pd.Timestamp,
-    run_ts: pd.Timestamp,
-    comp: pd.DataFrame,
-    offset_days: int,
+    run_date: date,
+    equity: float,
+    te_results: List[Dict],
+    detail_df: pd.DataFrame,
+    ideal_lag: int
 ) -> str:
-    """HTML body with color-coded rows."""
-    both = comp["has_target"] & comp["has_actual"]
-    target_only = comp["has_target"] & ~comp["has_actual"]
-    actual_only = ~comp["has_target"] & comp["has_actual"]
-
-    # Only show target symbols in the detailed table
-    view = comp[comp["has_target"]].copy()
-
-    mean_abs = median_abs = max_abs = None
-    if both.any():
-        matched = comp[both]
-        mean_abs = matched["abs_diff"].mean()
-        median_abs = matched["abs_diff"].median()
-        max_abs = matched["abs_diff"].max()
-
-    def status_label(row: pd.Series) -> str:
-        if not row.get("has_actual", False):
-            return "MISSING"
-        diff = float(row.get("weight_diff", 0.0))
-        if diff < -1e-6:
-            return "Underweight"
-        if diff > 1e-6:
-            return "Overweight"
-        return "Matched"
-
-    rows_html: list[str] = []
-
-    def status_cell_style(status: str) -> str:
-        """
-        Color only the Status cell (not the whole row):
-          - Underweight → orange
-          - Overweight  → pink
-          - MISSING     → yellow
-          - Matched     → neutral
-        """
-        base = "padding:4px 8px;"
-        if status == "Underweight":
-            return base + " background-color:#fed7aa;"  # orange
-        if status == "Overweight":
-            return base + " background-color:#fecaca;"  # pink/red
-        if status == "MISSING":
-            return base + " background-color:#fef9c3;"  # yellow
-        return base  # Matched / anything else
-    for _, row in view.iterrows():
-        sym = row["symbol"]
-        t_pct = 100 * row["target_weight_pct"]
-        a_pct = 100 * row["actual_weight_pct"]
-        d_pct = 100 * row["weight_diff"]
-        status = status_label(row)
-        wrong = bool(row.get("wrong_sign", False))
-        wrong_cell = (
-            "<td style='padding:4px 8px; text-align:center; color:#b91c1c;'><b><i>WRONG</i></b></td>"
-            if wrong
-            else "<td style='padding:4px 8px; text-align:center;'>-</td>"
-        )
-        prev1_val = row.get("prev1_target_weight_pct", None)
-        prev2_val = row.get("prev2_target_weight_pct", None)
-        next_val = row.get("next_target_weight_pct", None)
-        prev1_str = f"{100 * float(prev1_val):,.2f}%" if prev1_val is not None and not pd.isna(prev1_val) else "—"
-        prev2_str = f"{100 * float(prev2_val):,.2f}%" if prev2_val is not None and not pd.isna(prev2_val) else "—"
-        next_str = f"{100 * float(next_val):,.2f}%" if next_val is not None and not pd.isna(next_val) else "—"
-
-        # Color for prev1 target cell based on sign vs current target
-        prev1_cell_style = "padding:4px 8px; text-align:right;"
-        if prev1_val is not None and not pd.isna(prev1_val):
-            sign_prev1 = np.sign(float(prev1_val))
-            sign_cur = np.sign(row["target_weight_pct"])
-            if sign_prev1 != 0 and sign_cur != 0:
-                if sign_prev1 == sign_cur:
-                    # same sign: green
-                    prev1_cell_style += " background-color:#dcfce7;"
-                else:
-                    # different sign: red
-                    prev1_cell_style += " background-color:#fee2e2;"
-
-        rows_html.append(
-            "<tr>"
-            f"<td style='padding:4px 8px;'>{sym}</td>"
-            f"<td style='padding:4px 8px; text-align:right;'>{t_pct:,.2f}%</td>"
-            f"<td style='padding:4px 8px; text-align:right;'>{a_pct:,.2f}%</td>"
-            f"<td style='padding:4px 8px; text-align:right;'>{d_pct:,.2f}%</td>"
-            f"<td style='{status_cell_style(status)}'>{status}</td>"
-            f"{wrong_cell}"
-            f"<td style='{prev1_cell_style}'>{prev1_str}</td>"
-            f"<td style='padding:4px 8px; text-align:right;'>{prev2_str}</td>"
-            f"<td style='padding:4px 8px; text-align:right;'>{next_str}</td>"
-            "</tr>"
-        )
-
-    coverage_html = (
-        "<ul>"
-        f"<li>Total symbols in union: <b>{len(comp)}</b></li>"
-        f"<li>Targets only: <b>{int(target_only.sum())}</b></li>"
-        f"<li>Actuals only: <b>{int(actual_only.sum())}</b></li>"
-        f"<li>Both target & actual: <b>{int(both.sum())}</b></li>"
-        "</ul>"
-    )
-
-    stats_html = ""
-    if mean_abs is not None:
-        stats_html = (
-            "<p><b>Matched positions (weight diff stats)</b><br>"
-            f"Mean |diff|: {100*mean_abs:5.2f}% &nbsp; "
-            f"Median |diff|: {100*median_abs:5.2f}% &nbsp; "
-            f"Max |diff|: {100*max_abs:5.2f}%</p>"
-        )
-
-    html = f"""<html>
-  <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; color: #111827;">
-    <h2 style="margin-bottom:4px;">MAICRO: Targets vs Actual Positions</h2>
-    <p style="margin-top:0; color:#6b7280;">
-      Target (signal) date&nbsp;<code>positions_jianan_v6.date / live_positions.target_date</code>:
-      <b>{target_date.date()}</b><br>
-      Run timestamp&nbsp;<code>live_positions.ts</code> (kind='current'):
-      <b>{run_ts}</b> (run_ts.date - target_date = {offset_days:+d} days)
-    </p>
-    <p style="margin-top:4px; color:#6b7280; font-size:12px;">
-      Explanation: model targets are keyed by <code>positions_jianan_v6.date = D</code>.<br>
-      When the live run executes later, rows are stored in <code>maicro_logs.live_positions</code>
-      with <code>target_date = D</code> and <code>ts</code> equal to the actual run time.<br>
-      This email always uses the latest <code>ts</code> (for <code>kind='current'</code>) and
-      compares its weights to the targets for that same <code>D</code>.
-    </p>
-    <h3 style="margin-bottom:4px;">Coverage</h3>
-    {coverage_html}
-    {stats_html}
-    <h3 style="margin-bottom:4px;">All target symbols (sorted by |weight diff|)</h3>
-    <table cellspacing="0" cellpadding="0" style="border-collapse:collapse; border:1px solid #e5e7eb; margin-top:4px;">
-      <thead>
-        <tr style="background-color:#f3f4f6;">
-          <th style="padding:4px 8px; text-align:left;">Symbol</th>
-          <th style="padding:4px 8px; text-align:right;">Target %</th>
-          <th style="padding:4px 8px; text-align:right;">Actual %</th>
-          <th style="padding:4px 8px; text-align:right;">Diff %</th>
-          <th style="padding:4px 8px; text-align:left;">Status</th>
-          <th style="padding:4px 8px; text-align:center;">Wrong sign?</th>
-          <th style="padding:4px 8px; text-align:right;">Prev1 Target %</th>
-          <th style="padding:4px 8px; text-align:right;">Prev2 Target %</th>
-          <th style="padding:4px 8px; text-align:right;">Next Target %</th>
+    # 1. Summary Table of Lags
+    te_rows = ""
+    for res in te_results:
+        is_ideal = (res["lag"] == ideal_lag)
+        style = "background-color:#dcfce7; font-weight:bold;" if is_ideal else ""
+        te_rows += f"""
+        <tr style="{style}">
+            <td style="padding:4px 8px;">T-{res['lag']}</td>
+            <td style="padding:4px 8px;">{res['target_date']}</td>
+            <td style="padding:4px 8px; text-align:right;">{res['te']:.4f}</td>
+            <td style="padding:4px 8px; text-align:right;">{res['te']*100:.2f}%</td>
         </tr>
-      </thead>
-      <tbody>
-        {''.join(rows_html)}
-      </tbody>
-    </table>
-    <p style="margin-top:12px; color:#6b7280; font-size:12px;">
-      Notes:<br>
-      - Target weights from <code>maicro_logs.positions_jianan_v6</code> (earliest per date,symbol).<br>
-      - Actual weights from <code>maicro_logs.live_positions</code> (kind='current').<br>
-      - Long and short weights are normalized separately on their respective sides to sum to 1.
-    </p>
-  </body>
-</html>"""
+        """
+    
+    # 2. Detailed Breakdown (for Ideal Lag)
+    detail_df = detail_df.sort_values("abs_diff", ascending=False)
+    pos_rows = ""
+    for _, row in detail_df.iterrows():
+        sym = row["symbol"]
+        tgt = row["target_weight"]
+        act = row["actual_weight"]
+        diff = row["diff"]
+        
+        # Color coding
+        status_color = ""
+        if abs(diff) > 0.05: status_color = "background-color:#fee2e2;" # Red > 5%
+        elif abs(diff) > 0.02: status_color = "background-color:#fef3c7;" # Yellow > 2%
+        
+        pos_rows += f"""
+        <tr>
+            <td style="padding:4px 8px;">{sym}</td>
+            <td style="padding:4px 8px; text-align:right;">{tgt*100:.2f}%</td>
+            <td style="padding:4px 8px; text-align:right;">{act*100:.2f}%</td>
+            <td style="padding:4px 8px; text-align:right; {status_color}">{diff*100:+.2f}%</td>
+        </tr>
+        """
+
+    html = f"""
+    <html>
+    <body style="font-family: sans-serif; color: #111827;">
+        <h2>Maicro Daily Tracking Error Report</h2>
+        <p><strong>Date:</strong> {run_date} <br>
+           <strong>Equity:</strong> ${equity:,.2f}</p>
+        
+        <h3>Tracking Error by Lag</h3>
+        <p>Comparison of actual holdings (T) vs signals from (T-Lag).</p>
+        <table border="1" style="border-collapse: collapse; border-color: #e5e7eb;">
+            <thead style="background-color: #f3f4f6;">
+                <tr>
+                    <th style="padding:4px 8px;">Lag</th>
+                    <th style="padding:4px 8px;">Target Date</th>
+                    <th style="padding:4px 8px;">TE (Sum Abs)</th>
+                    <th style="padding:4px 8px;">TE %</th>
+                </tr>
+            </thead>
+            <tbody>
+                {te_rows}
+            </tbody>
+        </table>
+        
+        <h3>Detailed Breakdown (Lag {ideal_lag})</h3>
+        <p>Target Date: {run_date - timedelta(days=ideal_lag)}</p>
+        <table border="1" style="border-collapse: collapse; border-color: #e5e7eb; font-size: 12px;">
+            <thead style="background-color: #f3f4f6;">
+                <tr>
+                    <th style="padding:4px 8px;">Symbol</th>
+                    <th style="padding:4px 8px;">Target %</th>
+                    <th style="padding:4px 8px;">Actual %</th>
+                    <th style="padding:4px 8px;">Diff %</th>
+                </tr>
+            </thead>
+            <tbody>
+                {pos_rows}
+            </tbody>
+        </table>
+    </body>
+    </html>
+    """
     return html
 
-
-def send_email(subject: str, text_body: str, html_body: str) -> None:
+def send_email(subject: str, html_body: str):
     if not RESEND_API_KEY:
-        print("RESEND_API_KEY not set; skipping email send.")
+        print("RESEND_API_KEY not set; skipping email.")
         return
-
-    print(f"Sending targets-vs-actuals email to {TO_EMAIL}...")
-    url = "https://api.resend.com/emails"
-    headers = {
-        "Authorization": f"Bearer {RESEND_API_KEY}",
-        "Content-Type": "application/json",
-    }
-    data = {
-        "from": FROM_EMAIL,
-        "to": [TO_EMAIL],
-        "subject": subject,
-        "text": text_body,
-        "html": html_body,
-    }
-
+        
+    print(f"Sending email to {TO_EMAIL}...")
     try:
-        resp = requests.post(url, json=data, headers=headers, timeout=10)
-        resp.raise_for_status()
-        print("Email sent successfully.")
+        requests.post(
+            "https://api.resend.com/emails",
+            json={
+                "from": FROM_EMAIL,
+                "to": [TO_EMAIL],
+                "subject": subject,
+                "html": html_body
+            },
+            headers={
+                "Authorization": f"Bearer {RESEND_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            timeout=10
+        ).raise_for_status()
+        print("Email sent.")
     except Exception as e:
-        print(f"Failed to send email: {e}")
-        if hasattr(e, "response") and e.response is not None:
-            print(e.response.text)
+        print(f"Email failed: {e}")
 
-
-def main() -> None:
-    print("[targets_vs_actuals_daily] Starting...")
-
-    ctx = _load_latest_run_context()
-    if not ctx:
-        print("No live_positions.current runs found; exiting.")
+def main():
+    print("[daily_te] Starting...")
+    
+    # Analyze "Yesterday" by default, as it's a daily morning report for the closed day
+    # Or use "Today" if running late? Usually cron runs at 08:00 UTC, covering previous day?
+    # Actually, cron says 08:00. This is usually for the *current* state if we are trading continuously.
+    # However, snapshot-based calc is usually T vs T.
+    # Let's use "Today" (current UTC date) - 0 days? Or Yesterday?
+    # If we run at 08:00 UTC, we likely want to check the state *now* (or latest snapshot today)
+    # vs targets.
+    # The existing script used "latest run context".
+    # I will use TODAY's date (UTC).
+    run_date = datetime.utcnow().date()
+    
+    # 1. Load Actuals
+    actuals_df, equity = _load_actuals_snapshot(run_date)
+    if actuals_df.empty:
+        # Fallback to yesterday if today has no snapshot yet (e.g. running at 00:01)
+        run_date = run_date - timedelta(days=1)
+        actuals_df, equity = _load_actuals_snapshot(run_date)
+        
+    if actuals_df.empty:
+        print(f"No actual snapshots found for {run_date} or yesterday. Exiting.")
         return
-
-    target_date, run_ts = ctx
-    offset_days = (run_ts.date() - target_date.date()).days
-    print(f"Using target_date={target_date.date()}, run_ts={run_ts}, offset_days={offset_days}")
-
-    targets = _load_targets_for_date(target_date)
-    if targets.empty:
-        print(f"No target rows found for date={target_date.date()}; exiting.")
-        return
-
-    actuals = _load_actuals_for_date(target_date)
-    if actuals.empty:
-        print(f"No actual positions found for target_date={actual_date.date()}; proceeding with targets only.")
-        # Still build a comparison with empty actuals (all actual_weight_pct=0)
-        actuals = pd.DataFrame(columns=["symbol", "weight_norm"])
-
-    # Load previous/next targets (if available) and merge into comparison
-    prev1_targets = _load_prev_targets_for_date(target_date, steps=1)
-    prev2_targets = _load_prev_targets_for_date(target_date, steps=2)
-    next_targets = _load_next_targets_for_date(target_date)
-
-    comp = build_comparison(targets, actuals)
-    if prev1_targets is not None and not prev1_targets.empty:
-        prev1_view = prev1_targets[["symbol", "weight_norm"]].rename(
-            columns={"weight_norm": "prev1_target_weight_pct"}
-        )
-        comp = comp.merge(prev1_view, on="symbol", how="left")
-
-    if prev2_targets is not None and not prev2_targets.empty:
-        prev2_view = prev2_targets[["symbol", "weight_norm"]].rename(
-            columns={"weight_norm": "prev2_target_weight_pct"}
-        )
-        comp = comp.merge(prev2_view, on="symbol", how="left")
-
-    if next_targets is not None and not next_targets.empty:
-        next_view = next_targets[["symbol", "weight_norm"]].rename(
-            columns={"weight_norm": "next_target_weight_pct"}
-        )
-        comp = comp.merge(next_view, on="symbol", how="left")
-
-    text_body = format_email_text(target_date, run_ts, comp, offset_days)
-    html_body = format_email_html(target_date, run_ts, comp, offset_days)
-
-    subject = f"[MAICRO DAILY] Targets vs Actuals - D={target_date.date()} (run={run_ts.date()}, offset={offset_days:+d}d)"
-
-    # Log text body to stdout for inspection
-    print("----- EMAIL BODY BEGIN -----")
-    print(text_body)
-    print("----- EMAIL BODY END -----")
-
-    send_email(subject, text_body, html_body)
-    print("[targets_vs_actuals_daily] Done.")
-
+        
+    print(f"Loaded actuals for {run_date}. Equity: ${equity:,.2f}")
+    
+    te_results = []
+    ideal_lag = 2
+    ideal_detail_df = pd.DataFrame()
+    
+    # 2. Loop Lags
+    for lag in range(4): # 0, 1, 2, 3
+        target_date = run_date - timedelta(days=lag)
+        targets_df = _load_targets(target_date)
+        
+        te, detail = calculate_te(targets_df, actuals_df)
+        record_te(run_date, lag, te, target_date)
+        
+        te_results.append({
+            "lag": lag,
+            "target_date": target_date,
+            "te": te
+        })
+        
+        if lag == ideal_lag:
+            ideal_detail_df = detail
+            
+    # 3. Send Email
+    html = format_email_html(run_date, equity, te_results, ideal_detail_df, ideal_lag)
+    subject = f"[MAICRO] Daily Tracking Error: {te_results[ideal_lag]['te']*100:.2f}% (T-{ideal_lag})"
+    
+    send_email(subject, html)
+    print("[daily_te] Done.")
 
 if __name__ == "__main__":
     main()

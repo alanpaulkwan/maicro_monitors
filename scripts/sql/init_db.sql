@@ -107,3 +107,29 @@ CREATE TABLE IF NOT EXISTS maicro_monitors.ledger_updates (
     raw_json String -- Store full delta for debugging
 ) ENGINE = ReplacingMergeTree()
 ORDER BY (time, hash);
+
+-- Multi-lag Tracking Error
+CREATE TABLE IF NOT EXISTS maicro_monitors.tracking_error_multilag (
+    date Date,
+    strategy_id String,
+    lag Int8, -- 0, 1, 2, 3
+    te Float64, -- Tracking Error (Sum of Abs Diff)
+    target_date Date, -- The signal date used
+    timestamp DateTime DEFAULT now()
+) ENGINE = ReplacingMergeTree(timestamp)
+ORDER BY (date, strategy_id, lag);
+
+-- Schema for hl_meta table
+-- This table stores Hyperliquid instrument metadata including precision information
+
+CREATE TABLE IF NOT EXISTS maicro_monitors.hl_meta (
+    symbol String,
+    sz_decimals Int32,
+    px_decimals Int32,
+    size_step Float64,
+    tick_size Float64,
+    min_units Float64,
+    min_usd Float64,
+    updated_at DateTime
+) ENGINE = MergeTree()
+ORDER BY (symbol, updated_at);

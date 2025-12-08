@@ -48,6 +48,7 @@ PREFIX_TABLES: List[Tuple[str, str]] = [
     ("funding", "maicro_monitors.funding_payments"),
     ("ledger", "maicro_monitors.ledger_updates"),
     ("candles", "maicro_monitors.candles"),
+    ("meta", "maicro_monitors.hl_meta"),
 ]
 
 # Prefixes whose target tables use ReplacingMergeTree and should be optimized

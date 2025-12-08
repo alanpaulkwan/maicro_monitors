@@ -280,6 +280,69 @@ def sync_candles(hl: HyperliquidClient, buffer_mgr: BufferManager) -> None:
     print(f"[candles] Buffered {len(df)} candle rows.")
 
 
+def sync_meta(hl: HyperliquidClient, buffer_mgr: BufferManager) -> None:
+    print("[meta] Fetching exchange metadata...")
+    try:
+        meta_info = hl.get_meta_info() or {}
+        universe = meta_info.get("universe", [])
+    except Exception as e:
+        print(f"[meta] Error fetching metadata: {e}")
+        return
+
+    if not universe:
+        print("[meta] No universe data returned.")
+        return
+
+    rows: List[Dict[str, Any]] = []
+    ts = _now()
+    min_notional_env = float(os.getenv("MIN_NOTIONAL_USD", "10"))
+
+    for item in universe:
+        # Each item is like {"name": "BTC", "szDecimals": 5, "maxLeverage": 50, "onlyIsolated": false, ...}
+        if not isinstance(item, dict):
+            continue
+            
+        symbol = item.get("name")
+        if not symbol:
+            continue
+            
+        sz_decimals = int(item.get("szDecimals", 0))
+        # Standard logic: usually px_decimals = 6 - sz_decimals, clipped at 0
+        px_decimals = max(0, 6 - sz_decimals)
+        
+        size_step = 10.0 ** (-sz_decimals)
+        tick_size = 10.0 ** (-px_decimals)
+
+        # minSz logic
+        min_units = 0.0
+        for k in ("minSz", "minSize", "minUnit"):
+            if k in item and item[k] is not None:
+                try:
+                    min_units = float(item[k])
+                    break
+                except (ValueError, TypeError):
+                    continue
+
+        rows.append({
+            "symbol": str(symbol).upper(),
+            "sz_decimals": sz_decimals,
+            "px_decimals": px_decimals,
+            "size_step": size_step,
+            "tick_size": tick_size,
+            "min_units": min_units,
+            "min_usd": min_notional_env,
+            "updated_at": ts
+        })
+
+    if not rows:
+        print("[meta] No valid metadata rows parsed.")
+        return
+
+    df = pd.DataFrame(rows)
+    buffer_mgr.save(df, "meta")
+    print(f"[meta] Buffered metadata for {len(df)} symbols.")
+
+
 def main():
     print(f"[scheduled_ping_hyperliquid] (buffer-only) Starting for {HYPERLIQUID_ADDRESS} at {_now()}")
     hl = HyperliquidClient(HYPERLIQUID_ADDRESS)
@@ -291,6 +354,7 @@ def main():
     sync_funding(hl, buffer_mgr)
     sync_ledger(hl, buffer_mgr)
     sync_candles(hl, buffer_mgr)
+    sync_meta(hl, buffer_mgr)
 
     print(f"[scheduled_ping_hyperliquid] (buffer-only) Done at {_now()}")
 

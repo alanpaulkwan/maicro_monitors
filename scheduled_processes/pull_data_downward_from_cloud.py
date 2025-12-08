@@ -34,10 +34,21 @@ if REPO_ROOT not in sys.path:
 from config.settings import CLICKHOUSE_LOCAL_CONFIG, CLICKHOUSE_REMOTE_CONFIG  # noqa: E402
 
 
-DATABASES_TO_SYNC = ["hyperliquid", "maicro_logs", "binance"]
+DATABASES_TO_SYNC = ["hyperliquid", "maicro_logs", "binance", "maicro_monitors"]
 
 # Optional per-table cursor overrides: (database, table) -> column name
 CURSOR_OVERRIDES: Dict[Tuple[str, str], str] = {
+    # --- maicro_monitors ---
+    ("maicro_monitors", "account_snapshots"): "timestamp",
+    ("maicro_monitors", "positions_snapshots"): "timestamp",
+    ("maicro_monitors", "trades"): "time",
+    ("maicro_monitors", "orders"): "timestamp",
+    ("maicro_monitors", "funding_payments"): "time",
+    ("maicro_monitors", "ledger_updates"): "time",
+    ("maicro_monitors", "candles"): "updated_at",
+    ("maicro_monitors", "hl_meta"): "updated_at",
+    ("maicro_monitors", "tracking_error"): "timestamp",
+
     # --- binance ---
     ("binance", "bn_funding_rates"): "fundingTime",
     ("binance", "bn_margin_interest_rates"): "timestamp",

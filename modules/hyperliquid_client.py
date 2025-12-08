@@ -37,6 +37,10 @@ class HyperliquidClient:
         """Get user state (account value, margin, positions)."""
         return self._post("/info", {"type": "clearinghouseState", "user": self.address})
 
+    def get_meta_info(self) -> Dict[str, Any]:
+        """Get global exchange metadata (universe, decimals, etc.)."""
+        return self._post("/info", {"type": "meta"})
+
     def get_user_funding(self, start_time: int, end_time: int = None) -> List[Dict[str, Any]]:
         """Get user funding history."""
         # Note: userFunding endpoint takes startTime (and optional endTime?)

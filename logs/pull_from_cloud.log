@@ -1,0 +1,1139 @@
+[pull_data_downward_from_cloud] Starting at 2025-12-08 16:00:01.741879
+
+============================================================
+Syncing database: hyperliquid
+============================================================
+Traceback (most recent call last):
+  File "/home/apkwan/standalone_git/maicro_monitors/scheduled_processes/pull_data_downward_from_cloud.py", line 335, in <module>
+    main()
+  File "/home/apkwan/standalone_git/maicro_monitors/scheduled_processes/pull_data_downward_from_cloud.py", line 329, in main
+    sync_database(local_client, remote_client, db)
+  File "/home/apkwan/standalone_git/maicro_monitors/scheduled_processes/pull_data_downward_from_cloud.py", line 279, in sync_database
+    create_database_if_not_exists(local_client, database)
+  File "/home/apkwan/standalone_git/maicro_monitors/scheduled_processes/pull_data_downward_from_cloud.py", line 151, in create_database_if_not_exists
+    if not local_database_exists(local_client, database):
+  File "/home/apkwan/standalone_git/maicro_monitors/scheduled_processes/pull_data_downward_from_cloud.py", line 131, in local_database_exists
+    return local_client.execute(q)[0][0] > 0
+  File "/home/apkwan/.local/lib/python3.10/site-packages/clickhouse_driver/client.py", line 361, in execute
+    with self.disconnect_on_error(query, settings):
+  File "/usr/lib/python3.10/contextlib.py", line 135, in __enter__
+    return next(self.gen)
+  File "/home/apkwan/.local/lib/python3.10/site-packages/clickhouse_driver/client.py", line 305, in disconnect_on_error
+    self.establish_connection(settings)
+  File "/home/apkwan/.local/lib/python3.10/site-packages/clickhouse_driver/client.py", line 292, in establish_connection
+    self.connection.force_connect()
+  File "/home/apkwan/.local/lib/python3.10/site-packages/clickhouse_driver/connection.py", line 254, in force_connect
+    self.connect()
+  File "/home/apkwan/.local/lib/python3.10/site-packages/clickhouse_driver/connection.py", line 395, in connect
+    return self._init_connection(host, port)
+  File "/home/apkwan/.local/lib/python3.10/site-packages/clickhouse_driver/connection.py", line 339, in _init_connection
+    self.receive_hello()
+  File "/home/apkwan/.local/lib/python3.10/site-packages/clickhouse_driver/connection.py", line 513, in receive_hello
+    raise self.receive_exception()
+clickhouse_driver.errors.ServerException: Code: 516.
+DB::Exception: maicrobot: Authentication failed: password is incorrect, or there is no user with such name.. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::AccessControl::authenticate(DB::Credentials const&, Poco::Net::IPAddress const&, DB::ClientInfo const&) const @ 0x00000000173a5523
+4. DB::Session::authenticate(DB::Credentials const&, Poco::Net::SocketAddress const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018c485c4
+5. DB::Session::authenticate(String const&, String const&, Poco::Net::SocketAddress const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018c47ab2
+6. DB::TCPHandler::receiveHello() @ 0x000000001a6ec559
+7. DB::TCPHandler::runImpl() @ 0x000000001a6dc993
+8. DB::TCPHandler::run() @ 0x000000001a702b19
+9. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+10. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+11. Poco::PooledThread::run() @ 0x000000001f78a607
+12. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+13. start_thread @ 0x0000000000094ac3
+14. clone3 @ 0x00000000001268c0
+
+[pull_data_downward_from_cloud] Starting at 2025-12-08 22:00:01.258928
+
+============================================================
+Syncing database: hyperliquid
+============================================================
+Found 6 tables to sync.
+
+--- Table: hyperliquid.api_data (Engine: SharedReplacingMergeTree) ---
+  Table exists locally.
+  Cursor override: using inserted_at
+  Incremental sync from inserted_at > 2025-11-18 20:00:00...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: hyperliquid.api_data_v2 (Engine: SharedReplacingMergeTree) ---
+  Table exists locally.
+  Cursor override: using inserted_at
+  Incremental sync from inserted_at > 2025-11-02 02:48:07...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: hyperliquid.asset_ctx (Engine: SharedReplacingMergeTree) ---
+  Table exists locally.
+  Cursor override: using time
+  Incremental sync from time > 2025-09-30 23:59:00...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: hyperliquid.market_data (Engine: SharedReplacingMergeTree) ---
+  Table exists locally.
+  No suitable cursor column; skipping incremental sync.
+
+--- Table: hyperliquid.market_data_update (Engine: SharedReplacingMergeTree) ---
+  Table exists locally.
+  No suitable cursor column; skipping incremental sync.
+
+--- Table: hyperliquid.upload_log (Engine: SharedMergeTree) ---
+  Table exists locally.
+  No suitable cursor column; skipping incremental sync.
+
+============================================================
+Syncing database: maicro_logs
+============================================================
+Found 10 tables to sync.
+
+--- Table: maicro_logs.binance_update (Engine: SharedMergeTree) ---
+  Table exists locally.
+  Cursor override: using timestamp
+  Incremental sync from timestamp > 2025-12-07 17:30:39...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: maicro_logs.feature_store (Engine: SharedReplacingMergeTree) ---
+  Table exists locally.
+  Cursor override: using inserted_at
+  Incremental sync from inserted_at > 2025-10-28 00:44:38...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: maicro_logs.hl_meta (Engine: SharedMergeTree) ---
+  Table exists locally.
+  Cursor override: using updated_at
+  Incremental sync from updated_at > 2025-12-02 01:01:59...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: maicro_logs.live_account (Engine: SharedMergeTree) ---
+  Table exists locally.
+  Cursor override: using ts
+  Incremental sync from ts > 2025-12-07 00:00:44...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: maicro_logs.live_positions (Engine: SharedMergeTree) ---
+  Table exists locally.
+  Cursor override: using ts
+  Incremental sync from ts > 2025-12-07 00:00:44...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: maicro_logs.live_trades (Engine: SharedMergeTree) ---
+  Table exists locally.
+  Cursor override: using ts
+  Incremental sync from ts > 2025-09-04 12:21:41...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: maicro_logs.positions_jianan (skipped - deprecated) ---
+
+--- Table: maicro_logs.positions_jianan_mistake_ignore (skipped - deprecated) ---
+
+--- Table: maicro_logs.positions_jianan_v5 (skipped - deprecated) ---
+
+--- Table: maicro_logs.positions_jianan_v6 (Engine: SharedReplacingMergeTree) ---
+  Table exists locally.
+  Cursor override: using inserted_at
+  Incremental sync from inserted_at > 2025-12-07 16:22:00...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+============================================================
+Syncing database: binance
+============================================================
+Found 11 tables to sync.
+
+--- Table: binance.bn_funding_rates (Engine: SharedReplacingMergeTree) ---
+  Table exists locally.
+  Cursor override: using fundingTime
+  Incremental sync from fundingTime > 2025-12-07 17:00:00...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: binance.bn_margin_interest_rates (Engine: SharedReplacingMergeTree) ---
+  Table exists locally.
+  Cursor override: using timestamp
+  Incremental sync from timestamp > 2025-06-22 22:00:00...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: binance.bn_option_klines (Engine: SharedReplacingMergeTree) ---
+  Table exists locally.
+  Cursor override: using timestamp
+  Incremental sync from timestamp > 2025-12-07 17:00:00...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: binance.bn_option_symbols_active (Engine: SharedReplacingMergeTree) ---
+  Table exists locally.
+  Cursor override: using expiryDate
+  Incremental sync from expiryDate > 2026-09-25 08:00:00...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: binance.bn_option_symbols_exercised (Engine: SharedReplacingMergeTree) ---
+  Table exists locally.
+  Cursor override: using expiryDate
+  Incremental sync from expiryDate > 2025-12-07 08:00:00...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: binance.bn_perp_klines (Engine: SharedReplacingMergeTree) ---
+  Table exists locally.
+  Cursor override: using timestamp
+  Incremental sync from timestamp > 2025-12-07 17:00:00...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: binance.bn_perp_symbols (Engine: SharedReplacingMergeTree) ---
+  Table exists locally.
+  Cursor override: using onboard_date
+  Incremental sync from onboard_date > 2025-12-06 09:00:00...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: binance.bn_premium (Engine: SharedReplacingMergeTree) ---
+  Table exists locally.
+  Cursor override: using timestamp
+  Incremental sync from timestamp > 1970-01-01 00:00:00...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: binance.bn_spot_klines (Engine: SharedReplacingMergeTree) ---
+  Table exists locally.
+  Cursor override: using timestamp
+  Incremental sync from timestamp > 2025-12-07 17:00:00...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: binance.bn_spot_symbols (Engine: SharedReplacingMergeTree) ---
+  Table exists locally.
+  No suitable cursor column; skipping incremental sync.
+
+--- Table: binance.cg_coin_data (Engine: SharedReplacingMergeTree) ---
+  Table exists locally.
+  Cursor override: using last_updated
+  Incremental sync from last_updated > 2106-02-06 22:28:16...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+============================================================
+Syncing database: maicro_monitors
+============================================================
+Found 9 tables to sync.
+
+--- Table: maicro_monitors.account_snapshots (Engine: SharedMergeTree) ---
+  Table exists locally.
+  Cursor override: using timestamp
+  Incremental sync from timestamp > 2025-12-08 21:59:35...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: maicro_monitors.candles (Engine: SharedReplacingMergeTree) ---
+  Table exists locally.
+  Cursor override: using updated_at
+  Incremental sync from updated_at > 2025-12-08 12:38:47...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: maicro_monitors.funding_payments (Engine: SharedReplacingMergeTree) ---
+  Table exists locally.
+  Cursor override: using time
+  Incremental sync from time > 2025-12-02 17:00:00...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: maicro_monitors.hl_meta (Engine: SharedMergeTree) ---
+  Table exists locally.
+  Cursor override: using updated_at
+  Incremental sync from updated_at > 1970-01-01 00:00:00...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: maicro_monitors.ledger_updates (Engine: SharedReplacingMergeTree) ---
+  Table exists locally.
+  Cursor override: using time
+  Incremental sync from time > 1970-01-01 00:00:00...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: maicro_monitors.orders (Engine: SharedReplacingMergeTree) ---
+  Table exists locally.
+  Cursor override: using timestamp
+  Incremental sync from timestamp > 2025-12-07 00:02:03...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: maicro_monitors.positions_snapshots (Engine: SharedMergeTree) ---
+  Table exists locally.
+  Cursor override: using timestamp
+  Incremental sync from timestamp > 2025-12-08 22:00:02...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: maicro_monitors.tracking_error (Engine: SharedReplacingMergeTree) ---
+  Table exists locally.
+  Cursor override: using timestamp
+  Incremental sync from timestamp > 2025-12-08 02:50:33...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+
+--- Table: maicro_monitors.trades (Engine: SharedReplacingMergeTree) ---
+  Table exists locally.
+  Cursor override: using time
+  Incremental sync from time > 2025-12-07 00:02:03...
+  ✗ Error during incremental sync: Code: 497.
+DB::Exception: maicrobot: Not enough privileges. To execute this query, it's necessary to have the grant READ ON REMOTE. Stack trace:
+
+0. DB::Exception::Exception(DB::Exception::MessageMasked&&, int, bool) @ 0x0000000013e783df
+1. DB::Exception::Exception(String&&, int, String, bool) @ 0x000000000cb3454e
+2. DB::Exception::Exception(PreformattedMessage&&, int) @ 0x000000000cb34000
+3. DB::Exception::Exception<String, String>(int, FormatStringHelperImpl<std::type_identity<String>::type, std::type_identity<String>::type>, String&&, String&&) @ 0x000000000cb334ab
+4. bool DB::ContextAccess::checkAccessImplHelper<true, false, false, std::basic_string_view<char, std::char_traits<char>>>(std::shared_ptr<DB::Context const> const&, DB::AccessFlags, std::basic_string_view<char, std::char_traits<char>> const&) const @ 0x00000000173ea212
+5. DB::ContextAccess::checkAccessWithFilter(std::shared_ptr<DB::Context const> const&, DB::AccessFlags const&, std::basic_string_view<char, std::char_traits<char>>, std::basic_string_view<char, std::char_traits<char>>) const @ 0x00000000173d2605
+6. DB::ITableFunction::execute(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const>, String const&, DB::ColumnsDescription, bool, bool) const @ 0x0000000016cca032
+7. DB::Context::executeTableFunction(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::ITableFunction> const&) @ 0x000000001889887f
+8. DB::QueryAnalyzer::resolveTableFunction(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&, bool) @ 0x0000000017ffaca4
+9. DB::QueryAnalyzer::resolveQueryJoinTreeNode(std::shared_ptr<DB::IQueryTreeNode>&, DB::IdentifierResolveScope&, DB::QueryExpressionsAliasVisitor&) @ 0x000000001801a15b
+10. DB::QueryAnalyzer::resolveQuery(std::shared_ptr<DB::IQueryTreeNode> const&, DB::IdentifierResolveScope&) @ 0x0000000017fea7ef
+11. DB::QueryAnalyzer::resolve(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::IQueryTreeNode> const&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe7fea
+12. DB::QueryAnalysisPass::run(std::shared_ptr<DB::IQueryTreeNode>&, std::shared_ptr<DB::Context const>) @ 0x0000000017fe761c
+13. DB::QueryTreePassManager::run(std::shared_ptr<DB::IQueryTreeNode>) @ 0x000000001803d536
+14. DB::buildQueryTreeAndRunPasses(std::shared_ptr<DB::IAST> const&, DB::SelectQueryOptions const&, std::shared_ptr<DB::Context const> const&, std::shared_ptr<DB::IStorage> const&) (.llvm.1237827766138119347) @ 0x0000000018b9248d
+15. DB::InterpreterSelectQueryAnalyzer::InterpreterSelectQueryAnalyzer(std::shared_ptr<DB::IAST> const&, std::shared_ptr<DB::Context const> const&, DB::SelectQueryOptions const&, std::vector<String, std::allocator<String>> const&) @ 0x0000000018b903aa
+16. DB::InterpreterInsertQuery::execute() @ 0x0000000018b0e625
+17. DB::executeQueryImpl(char const*, char const*, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum, std::unique_ptr<DB::ReadBuffer, std::default_delete<DB::ReadBuffer>>&, std::shared_ptr<DB::IAST>&, std::shared_ptr<DB::ImplicitTransactionControlExecutor>, std::function<void ()>) @ 0x0000000018f68484
+18. DB::executeQuery(String const&, std::shared_ptr<DB::Context>, DB::QueryFlags, DB::QueryProcessingStage::Enum) @ 0x0000000018f622b3
+19. DB::TCPHandler::runImpl() @ 0x000000001a6e04b7
+20. DB::TCPHandler::run() @ 0x000000001a702b19
+21. Poco::Net::TCPServerConnection::start() @ 0x000000001f7c39c7
+22. Poco::Net::TCPServerDispatcher::run() @ 0x000000001f7c3e59
+23. Poco::PooledThread::run() @ 0x000000001f78a607
+24. Poco::ThreadImpl::runnableEntry(void*) @ 0x000000001f788a01
+25. start_thread @ 0x0000000000094ac3
+26. clone3 @ 0x00000000001268c0
+
+[pull_data_downward_from_cloud] Done at 2025-12-08 22:00:22.636454

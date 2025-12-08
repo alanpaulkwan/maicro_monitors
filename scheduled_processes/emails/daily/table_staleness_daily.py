@@ -63,6 +63,12 @@ TABLES: List[Tuple[str, str, timedelta]] = [
     ("maicro_monitors.ledger_updates", "time", timedelta(hours=12)),
     ("maicro_monitors.candles", "ts", timedelta(hours=6)),
     ("maicro_monitors.tracking_error", "date", timedelta(days=2)),
+    # Binance (synced every 6h)
+    ("binance.bn_funding_rates", "fundingTime", timedelta(hours=12)),
+    ("binance.bn_perp_klines", "timestamp", timedelta(hours=6)),
+    ("binance.bn_spot_klines", "timestamp", timedelta(hours=6)),
+    ("binance.bn_premium", "timestamp", timedelta(hours=6)),
+    ("binance.bn_margin_interest_rates", "timestamp", timedelta(hours=26)),
 ]
 
 
