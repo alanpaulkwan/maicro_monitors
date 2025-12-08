@@ -9,7 +9,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from modules.clickhouse_client import query_df
 
-RESEND_API_KEY = os.getenv("RESEND_API_KEY", "re_MLXxTsvc_6JpYMDMB3QGgDgU97s8C8dxV")
+# Resend API key must come from environment (no default in repo)
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 FROM_EMAIL = "Gemini <gemini@resend.dev>" # Updated from address as per context
 TO_EMAIL = "alanpaulkwan@gmail.com"
 

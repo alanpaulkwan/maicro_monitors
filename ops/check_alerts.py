@@ -22,7 +22,8 @@ from config import settings
 
 # --- Configuration ---
 
-RESEND_API_KEY = os.getenv("RESEND_API_KEY", "re_MLXxTsvc_6JpYMDMB3QGgDgU97s8C8dxV")
+# Resend API key must be provided via environment
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 FROM_EMAIL = "Gemini Alerts <gemini@resend.dev>"
 TO_EMAIL = "alanpaulkwan@gmail.com"
 
@@ -56,6 +57,9 @@ MONITORED_TABLES = [
 # --- Helper Functions ---
 
 def send_alert_email(subject, body):
+    if not RESEND_API_KEY:
+        print("RESEND_API_KEY not set; skipping alert email send.")
+        return
     print(f"Sending ALERT to {TO_EMAIL}...")
     url = "https://api.resend.com/emails"
     headers = {

@@ -384,6 +384,29 @@ def format_email_text(
     lines.append(
         f"Order lookback window: last {ORDERS_LOOKBACK_HOURS}h before run_ts in maicro_monitors.orders."
     )
+    lines.append("")
+    lines.append("Computation sketch (Python-ish):")
+    lines.append("  # Out-of-market exposure (normalized target space)")
+    lines.append("  long_missing  = sum(max(w, 0.0) for w in missing_target_weights)")
+    lines.append("  short_missing = sum(abs(min(w, 0.0)) for w in missing_target_weights)")
+    lines.append("  net_missing   = long_missing - short_missing")
+    lines.append("")
+    lines.append("  # Per-symbol diagnosis inputs")
+    lines.append("  raw_weight   = positions_jianan_v6.weight[date == D, symbol]")
+    lines.append("  equity_used  = median(live_positions.equity_usd[date == D])")
+    lines.append("  est_notional = abs(raw_weight) * equity_used")
+    lines.append("  meta         = hl_meta[symbol]  # min_usd, min_units, size_step, tick_size")
+    lines.append("  orders       = maicro_monitors.orders[coin == symbol")
+    lines.append("                                        & timestamp in (run_ts - lookback, run_ts)]")
+    lines.append("")
+    lines.append("  # Reason buckets (simplified):")
+    lines.append("  if symbol not in hl_meta: reason = 'no_meta'")
+    lines.append("  elif est_notional < meta.min_usd: reason = 'below_min_usd'")
+    lines.append("  elif only_reduce_only_orders(orders): reason = 'reduce_only_only'")
+    lines.append("  elif all_canceled(orders): reason = 'orders_canceled'")
+    lines.append("  elif any_open(orders): reason = 'open_order_no_pos'")
+    lines.append("  elif any_filled(orders): reason = 'filled_but_no_pos'")
+    lines.append("  else: reason = 'no_order_unknown'")
     return "\n".join(lines)
 
 
@@ -478,6 +501,40 @@ def format_email_html(
       filled_but_no_pos, no_order_unknown).
     </p>
     """
+    code_snippet_html = """
+    <h3 style="margin-top:12px; margin-bottom:4px;">Appendix: computation sketch</h3>
+    <pre style="background-color:#111827; color:#e5e7eb; padding:8px 10px; border-radius:4px; font-size:12px; overflow-x:auto;">
+<code># Out-of-market exposure (normalized target space)
+long_missing  = sum(max(w, 0.0) for w in missing_target_weights)
+short_missing = sum(abs(min(w, 0.0)) for w in missing_target_weights)
+net_missing   = long_missing - short_missing
+
+# Per-symbol diagnosis inputs
+raw_weight   = positions_jianan_v6.weight[date == D, symbol]
+equity_used  = median(live_positions.equity_usd[date == D])
+est_notional = abs(raw_weight) * equity_used
+meta         = hl_meta[symbol]  # min_usd, min_units, size_step, tick_size
+orders       = maicro_monitors.orders[
+    (coin == symbol)
+    & (timestamp between run_ts - lookback and run_ts)
+]
+
+# Reason buckets (simplified)
+if symbol not in hl_meta:
+    reason = "no_meta"
+elif est_notional &lt; meta.min_usd:
+    reason = "below_min_usd"
+elif only_reduce_only_orders(orders):
+    reason = "reduce_only_only"
+elif all_canceled(orders):
+    reason = "orders_canceled"
+elif any_open(orders):
+    reason = "open_order_no_pos"
+elif any_filled(orders):
+    reason = "filled_but_no_pos"
+else:
+    reason = "no_order_unknown"</code></pre>
+    """
 
     html = f"""<html>
   <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; color: #111827;">
@@ -522,6 +579,7 @@ def format_email_html(
       <span style="background-color:#e5e7eb; padding:2px 4px; border-radius:3px;">no_order_unknown</span>
       (gray, unexplained; check raw orders and logs).
     </p>
+    {code_snippet_html}
   </body>
 </html>"""
     return html
