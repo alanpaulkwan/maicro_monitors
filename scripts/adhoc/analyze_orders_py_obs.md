@@ -44,6 +44,82 @@ Snapshot parity check (targets vs current positions; live_positions latest per d
   - extra_asset (current present, no target): 0.34
 - ~61% of targets have the right sign; ~18% are missing entirely; ~18% are polarity-flipped; a few extras exist with no target.
 
+Weight-accuracy within ±2% of equity (using live_positions)
+- Per-symbol deviation = |current_weight − target_weight|, with weights from live_positions.usd / equity_usd (median per date).
+- Mean per day (same 65-day window):
+  - correct_within_2%: 14.74
+  - correct_off_2%: 7.43
+  - long_missing: 2.15
+  - short_missing: 3.75
+  - long_but_short: 3.05
+  - short_but_long: 3.58
+  - extra_asset: 0.34
+- Interpretation: sign-correct & tightly sized (≤2% weight error) on ~15 symbols/day; another ~7 sign-correct but >2% off; ~9 symbols/day either missing or polarity-flipped; a handful of extras.
+
+Offset-dependent order coverage (targets finite/non-zero weight & pred_ret; earliest per date/symbol; exec = trade_date + offset)
+- order_coverage_pct = orders / targets; correct_of_targets_pct = correct / targets; correct_of_placed_pct = correct / orders
+- 0d: targets 2274; orders 904; correct 544; wrong 360; missing 1370; cov 39.75%; correct_of_targets 23.92%; correct_of_placed 60.18%.
+- 1d: targets 2275; orders 928; correct 496; wrong 432; missing 1347; cov 40.79%; correct_of_targets 21.80%; correct_of_placed 53.45%.
+- 2d: targets 2272; orders 918; correct 427; wrong 491; missing 1354; cov 40.40%; correct_of_targets 18.79%; correct_of_placed 46.51%.
+- Repro script:
+```python
+import pandas as pd
+from modules.clickhouse_client import query_df
+
+offsets = [0, 1, 2]
+orders_range = query_df("SELECT min(toDate(timestamp)) AS min_d, max(toDate(timestamp)) AS max_d FROM maicro_monitors.orders")
+orders_min = pd.to_datetime(orders_range.loc[0, 'min_d']).date()
+orders_max = pd.to_datetime(orders_range.loc[0, 'max_d']).date()
+rows = []
+for off in offsets:
+    trade_start = orders_min - pd.Timedelta(days=off)
+    trade_end = orders_max - pd.Timedelta(days=off)
+    pos = query_df("""
+        SELECT date, symbol, weight
+        FROM (
+            SELECT date, symbol, weight, inserted_at
+            FROM maicro_logs.positions_jianan_v6
+            WHERE date BETWEEN %(d0)s AND %(d1)s
+              AND weight IS NOT NULL AND isFinite(weight) AND weight != 0
+              AND pred_ret IS NOT NULL AND isFinite(pred_ret)
+            ORDER BY date, symbol, inserted_at
+            LIMIT 1 BY date, symbol
+        )
+    """, params={'d0': trade_start, 'd1': trade_end})
+    pos['date'] = pd.to_datetime(pos['date']).dt.date
+    pos['symbol_norm'] = pos['symbol'].str.upper()
+    pos['desired_side'] = pos['weight'].apply(lambda w: 'B' if w > 0 else 'A')
+    pos['exec_date'] = (pd.to_datetime(pos['date']) + pd.Timedelta(days=off)).dt.date
+
+    orders = query_df("""
+        SELECT toDate(timestamp) AS date, coin, side
+        FROM maicro_monitors.orders
+        WHERE toDate(timestamp) BETWEEN %(d0)s AND %(d1)s
+    """, params={'d0': orders_min, 'd1': orders_max})
+    orders['coin_norm'] = orders['coin'].str.upper()
+    orders['date'] = pd.to_datetime(orders['date']).dt.date
+    og = orders.groupby(['date', 'coin_norm'])['side'].apply(list).reset_index(name='sides')
+
+    merged = pos.merge(og, left_on=['exec_date', 'symbol_norm'], right_on=['date', 'coin_norm'], how='left')
+    merged['has_order'] = merged['sides'].notna()
+    merged['side_match'] = merged.apply(lambda r: r['desired_side'] in r['sides'] if isinstance(r['sides'], list) else False, axis=1)
+
+    total = len(merged); with_orders = merged['has_order'].sum(); correct = merged['side_match'].sum()
+    rows.append({
+        'offset_days': off,
+        'targets': total,
+        'orders': with_orders,
+        'correct': correct,
+        'wrong': with_orders - correct,
+        'missing': total - with_orders,
+        'order_coverage_pct': with_orders / total * 100 if total else 0,
+        'correct_of_targets_pct': correct / total * 100 if total else 0,
+        'correct_of_placed_pct': correct / with_orders * 100 if with_orders else 0,
+    })
+
+print(pd.DataFrame(rows))
+```
+
 Speculation from code (~/execution/latest/hl_order)
 - Exec offset: scheduler uses target_date +1 day 00:00; monitoring assumed +2. Misalignment can mark present orders as “missing” (or vice versa).
 - Min-notional gating: planner enforces MIN_NOTIONAL_USD (env) after reserve/leverage; rounding to size_step/min_units + min_usd can drop small names; executor enforces min notional again on the diff.

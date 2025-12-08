@@ -16,87 +16,20 @@
 - [x] **Orchestrator**: Consolidated all monitors into `scripts/orchestrate_monitors.py`.
 - [x] **Sync Script**: `scripts/sync_to_remote.py` implements incremental sync (Local -> Remote) for `maicro_monitors`, `maicro_logs`, `binance`, and `hyperliquid` tables.
 - [x] **Cron Setup**: `scripts/generate_cron.py` generates the crontab entry for the combined workflow.
+- [x] **Downward Sync Verified**: Confirmed `scripts/sync_to_remote.py` uses `max(time_col)` cursors and successfully pushes new data to Remote ClickHouse.
+- [x] **PnL Calculator**: Implemented `05_pnl_calculator/pnl_calculator.py` handling realized PnL, funding, and unrealized PnL from snapshots.
+- [x] **Tracking Error Calculator**: Updated `05_tracking_error/tracking_error_calculator.py` to mirror the ipynb (uses `maicro_logs.live_account`, `maicro_logs.positions_jianan_v6`, `maicro_monitors.candles` forward returns) with a default 60-day lookback (`--lookback` to override), storing Daily TE and 7d rolling into `maicro_monitors.tracking_error`.
 
 ### 📋 Next Steps (The Plan)
 
-1.  **Test Downward Sync**
-    - Verify `scripts/sync_to_remote.py` is correctly pushing all tables, especially `maicro_logs.positions_jianan_v6` (recently fixed).
-    - Ensure data integrity on the Remote Cloud ClickHouse.
-
-2.  **PnL Calculator**
-    - Develop a robust PnL calculation engine.
-    - Needs to handle realized vs unrealized PnL, funding payments, and fee adjustments.
-    - Should run on the Remote DB (or Local and synced) to power dashboards.
-
-3.  **Tracking Error Calculator**
-    - Implement `05_tracking_error` logic.
-    - Compare `target_weights` (from strategy logs) vs `actual_weights` (from `positions_snapshots`).
-    - Calculate daily and rolling tracking error.
-
-4.  **Fix Summary Emails**
-    - Decide on the number and content of emails (e.g., Daily PnL, Weekly Risk Report).
-    - Integrate `resend.dev` for reliable delivery (Skill: `~/maestral/zz_agent_skills/email.md`).
-    - Ensure analytics are built *first* so emails contain meaningful data.
-
-5.  **Design Dashboard**
-    - Build a comprehensive dashboard (Streamlit or similar).
-    - **Tabs**:
-        - **Overview**: High-level PnL, AUM, Exposure.
-        - **Positions**: Real-time (synced) positions vs Targets.
-        - **Trades**: Recent execution history.
-        - **Tracking Error**: Visualizations of TE over time.
-        - **System Health**: Sync latency, monitor heartbeat.
-
-## 📊 Dashboard Design Specification
-
-**Framework**: Streamlit
-**Data Source**: Remote ClickHouse (Maicro Cloud)
-
-### 1. 📈 Tab: Overview (PnL & Risk)
-**Goal**: Instant view of account health and performance.
-- **KPI Cards**:
-  - `Total Equity` (USDC)
-  - `Daily PnL` ($ and %)
-  - `Rolling 7d PnL`
-  - `Margin Usage %` / `Leverage`
-- **Charts**:
-  - **Equity Curve**: Hourly/Daily account value.
-  - **PnL Attribution**: Bar chart of Daily Realized vs Unrealized PnL.
-  - **Drawdown**: % Drawdown from peak equity.
-
-### 2. 🎯 Tab: Positions vs Targets
-**Goal**: Monitor adherence to the strategy model.
-- **Main Table**: `Live Positions` vs `Target Weights`
-  - Columns: `Symbol`, `Side`, `Notional ($)`, `Actual %`, `Target %`, `Delta %`, `Z-Score` (Deviation).
-  - **Conditional Formatting**: Highlight `Delta %` > Threshold (e.g., 2%).
-- **Charts**:
-  - **Allocation Delta**: Bar chart showing Over/Underweight per coin.
-  - **Long/Short Exposure**: Net exposure breakdown.
-
-### 3. 📉 Tab: Tracking Error Analysis
-**Goal**: Quantify execution quality and drift.
-- **Metrics**:
-  - `Daily Tracking Error` (StdDev of diffs).
-  - `Rolling 7d / 30d TE`.
-  - `Information Ratio` (if benchmark available).
-- **Charts**:
-  - **TE History**: Line chart of Daily TE over time.
-  - **Weight Scatter**: Scatter plot of Actual vs Target weights (Ideal = 45-degree line).
-
-### 4. 📝 Tab: Trade Blotter
-**Goal**: Audit individual executions.
-- **Table**: Paginated list of recent fills.
-  - `Time`, `Symbol`, `Side`, `Size`, `Price`, `Fee`, `Order ID`.
-- **Filters**: Symbol, Date Range, Side.
-- **Aggregates**: Total Volume Traded (24h), Total Fees Paid.
-
-### 5. 🏥 Tab: System Health & Sync Status
-**Goal**: Ensure data pipeline integrity.
-- **Sync Latency**:
-  - Table showing `Last Updated Timestamp` for: `trades`, `orders`, `account`, `ohlcv`.
-  - Alert if `Remote Time` lags `Local Time` by > 5 mins.
-- **Service Status**:
-  - Status indicators for `Orchestrator` and `Sync Script` (based on log file timestamps).
+1. **Refine Dashboard (Streamlit)**
+   - Add PnL + TE charts (Daily & 7d), positions with unrealized PnL, and trade history to `06_dashboards/streamlit_main.py`.
+2. **Finalize Summary Email**
+   - End-to-end test `reports/daily_summary_email.py` via cron with real env vars (`RESEND_API_KEY`).
+3. **System Health Monitoring**
+   - New dashboard tab for table staleness and local-vs-remote sync lag; surface orchestrator last-run status.
+4. **Documentation & Handoff**
+   - Expand README after dashboard/health updates (usage, cron ops, troubleshooting); ensure docstrings are present where missing.
 
 ---
 
@@ -107,21 +40,24 @@ maicro_monitors/
 ├── plan.md                           # This document
 ├── config/
 │   ├── settings.py                   # Dual Config: CLICKHOUSE_LOCAL_CONFIG & CLICKHOUSE_REMOTE_CONFIG
-│   └── logging_config.py
+│   └── ...
 ├── scripts/
-│   ├── orchestrate_monitors.py       # MAIN INGESTOR: Runs all monitors, writes to Local DB.
-│   ├── sync_to_remote.py             # MAIN SYNC: Pushes Local DB -> Remote DB.
-│   ├── run_monitors_and_sync.sh      # Wrapper for Cron.
-│   ├── generate_cron.py              # Helper to setup cron.
-│   └── init_db.py                    # Schema setup.
+│   ├── orchestrate_monitors.py       # MAIN INGESTOR
+│   ├── sync_to_remote.py             # MAIN SYNC
+│   ├── run_monitors_and_sync.sh      # Wrapper for Cron
+│   └── ...
 ├── modules/
 │   ├── hyperliquid_client.py
 │   ├── clickhouse_client.py
-│   └── buffer_manager.py             # Buffers data for batch insertion.
+│   └── buffer_manager.py
 ├── reports/
-│   └── daily_summary_email.py        # (To be updated with new analytics)
-├── 05_tracking_error/                # (To be implemented)
-└── 06_dashboards/                    # (To be implemented)
+│   └── daily_summary_email.py        # Daily Email Report
+├── 05_pnl_calculator/
+│   └── pnl_calculator.py             # PnL Logic
+├── 05_tracking_error/
+│   └── tracking_error_calculator.py  # TE Logic
+└── 06_dashboards/
+    └── streamlit_main.py             # Dashboard
 ```
 
 ---

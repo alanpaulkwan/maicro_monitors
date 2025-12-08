@@ -1,16 +1,26 @@
 #!/usr/bin/env python3
 """
-Tracking Error Calculator - Based on test_pnl_analysis.ipynb methodology
-Compares actual live trading performance vs target paper portfolio performance.
+Tracking Error / PnL Monitor (ipynb-aligned)
+Compares recent model predictions (targets) to live account performance using
+the *same tables* as the analysis notebook:
 
-Methodology:
-1. Load live trading NAV data from maicro_logs.live_account
-2. Calculate paper portfolio returns from target_weights × market_returns  
-3. Compute tracking error as the difference in returns/performance
-4. Store results in maicro_monitors.tracking_error table
+Data sources (unchanged from notebook):
+- maicro_logs.live_account           -> live NAV (accountValue/totalNtlPos)
+- maicro_logs.positions_jianan_v6    -> model target weights
+- maicro_monitors.candles (1d)       -> market closes (forward returns)
+
+Methodology (mirrors test_pnl_analysis.ipynb):
+1) Load live NAV and compute daily returns (last value per day) from live_account
+2) Build forward market returns: close[t+1]/close[t]-1 from maicro_monitors.candles
+3) Pivot latest target weights per (date, symbol) from positions_jianan_v6
+4) Compute paper portfolio returns: forward_returns × weights.shift(1)
+5) Tracking error = live_daily_return - paper_return (aligned dates)
+6) Store daily TE + 7d rolling into maicro_monitors.tracking_error
 """
 import sys
 import os
+import json
+import argparse
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
@@ -60,15 +70,29 @@ def analyze_pnl_returns_daily(df, nav_value_col='equity_usd', timestamp_col='ts'
 
 
 def load_live_data(lookback_days=30):
-    """Load live trading data from maicro_logs.live_account"""
+    """Load live account data and unpack marginSummary fields for NAV choices."""
     query = f"""
-    SELECT ts, equity_usd
+    SELECT ts, equity_usd, raw
     FROM maicro_logs.live_account
     WHERE ts >= now() - INTERVAL {lookback_days} DAY
     ORDER BY ts
     """
     df = query_df(query)
-    return df
+    if df.empty:
+        return df
+
+    # Parse marginSummary.* out of raw json (matches notebook logic)
+    try:
+        margin = pd.json_normalize(df['raw'].apply(lambda x: json.loads(x) if isinstance(x, str) else {}))
+        # Flatten expected keys if present
+        for col in ['marginSummary.accountValue', 'marginSummary.totalNtlPos', 'marginSummary.totalRawUsd', 'marginSummary.totalMarginUsed']:
+            if col in margin.columns:
+                df[col.split('.')[-1]] = pd.to_numeric(margin[col], errors='coerce')
+    except Exception:
+        pass
+
+    # Prefer accountValue/totalNtlPos if present; caller can pick the column
+    return df.drop(columns=['raw']) if 'raw' in df.columns else df
 
 
 def load_paper_data(lookback_days=30):
@@ -158,33 +182,32 @@ def calculate_tracking_error(live_returns, paper_returns):
 
 def load_market_returns(lookback_days=30):
     """
-    Load market close prices from maicro_monitors.candles and calculate daily returns.
-    
+    Load market close prices from maicro_monitors.candles and calculate *forward*
+    daily returns (close[t+1]/close[t] - 1), matching the ipynb.
+
     Returns:
-        pd.DataFrame: DataFrame with daily returns, indexed by date, columns as symbols.
+        pd.DataFrame: forward returns, indexed by date, columns as symbols.
     """
     query = f"""
     SELECT toDate(ts) as date, coin, close
     FROM maicro_monitors.candles
-    WHERE ts >= toStartOfHour(now() - INTERVAL {lookback_days + 5} DAY)  -- Add buffer for return calculation
+    WHERE ts >= toStartOfHour(now() - INTERVAL {lookback_days + 5} DAY)  -- buffer for forward shift
     AND interval = '1d'
     ORDER BY date, coin
     """
     df = query_df(query)
-    
+
     if df.empty:
         return pd.DataFrame()
-    
+
     df['date'] = pd.to_datetime(df['date'])
-    df['coin'] = df['coin'].str.upper() # Standardize coins to uppercase
-    
-    # Pivot to get coins as columns and date as index
+    df['coin'] = df['coin'].str.upper()  # Standardize coins to uppercase
+
     prices_pivot = df.pivot_table(index='date', columns='coin', values='close')
-    
-    # Calculate daily returns
-    returns = prices_pivot.pct_change()
-    
-    return returns.dropna(how='all') # Drop rows where all returns are NaN
+    # Forward one-day returns (t -> t+1), label at date t
+    fwd_returns = prices_pivot.shift(-1) / prices_pivot - 1
+
+    return fwd_returns.dropna(how='all')
 
 def store_tracking_error_results(te_metrics, strategy_id="default_strategy"):
     """
@@ -228,25 +251,33 @@ def store_tracking_error_results(te_metrics, strategy_id="default_strategy"):
 
 def main():
     """Main tracking error calculation pipeline"""
+    parser = argparse.ArgumentParser(description="Tracking error (live vs model) calculator")
+    parser.add_argument("--lookback", type=int, default=60, help="Lookback window in days (default: 60)")
+    args = parser.parse_args()
+
     print("=" * 60)
     print("Tracking Error Calculator")
     print("=" * 60)
     
-    lookback_days = 30
+    lookback_days = args.lookback
     
     # 1. Load live trading data
     print(f"\n1. Loading live trading data (last {lookback_days} days)...")
     live_df = load_live_data(lookback_days)
-    
+
     if live_df.empty:
         print("❌ No live trading data found")
         return
     
     print(f"   ✓ Loaded {len(live_df)} records")
     
+    # Choose NAV column: prefer totalNtlPos then accountValue then equity_usd
+    nav_col_candidates = [c for c in ['totalNtlPos', 'accountValue', 'equity_usd'] if c in live_df.columns]
+    nav_col = nav_col_candidates[0] if nav_col_candidates else 'equity_usd'
+
     # 2. Calculate live portfolio returns
     print("\n2. Calculating live portfolio returns...")
-    live_metrics, live_daily = analyze_pnl_returns_daily(live_df)
+    live_metrics, live_daily = analyze_pnl_returns_daily(live_df, nav_value_col=nav_col)
     
     if live_metrics is None:
         print("❌ Insufficient data for return calculation")
@@ -272,8 +303,8 @@ def main():
     print(f"   - Target weights date range: {weights_pivot.index.min()} to {weights_pivot.index.max()}")
     print(f"   - Target weights unique symbols ({len(weights_pivot.columns)}): {weights_pivot.columns.tolist()[:5]}...") # Print first 5
     
-    # 4. Loading market returns data
-    print("\n4. Loading market returns data...")
+    # 4. Loading market forward returns data
+    print("\n4. Loading market returns data (forward, ipynb-style)...")
     market_returns_df = load_market_returns(lookback_days)
     
     if market_returns_df.empty:
@@ -323,4 +354,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
