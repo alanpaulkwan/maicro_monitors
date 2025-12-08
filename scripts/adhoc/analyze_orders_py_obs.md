@@ -126,3 +126,10 @@ Speculation from code (~/execution/latest/hl_order)
 - Missing mids/meta: symbols without mids or hl_meta get skipped.
 - Side checks: orders are deltas vs current; reductions/closures appear as opposite-side trades relative to raw target sign.
 - Capital scaling: reserve + leverage rescales weights; tiny rescaled notionals get filtered out.
+
+Email-ready summary (also in enail.md)
+- Order coverage (exec offset 0/1/2d): ~40% of targets get any order; only ~19–24% of targets get correct-side orders; missing ~60% of targets.
+- Position parity (65 days): sign-correct ~61%; missing ~18%; flipped ~18%; extras ~0.3. With ±2% weight tolerance: ~15 correct & tight; ~7 correct but off-size; ~9 missing/flip per day.
+- Likely causes: offset mismatch; min-notional + rounding pruning; missing mids/meta; delta-vs-sign confusion; capital scaling; possible DRY_RUN or data/timing issues.
+- Worst missing examples (offset +2d): BTC, AAVE, ADA, ARB, DOGE had targets but no orders on exec date.
+- Wrong-side examples (offset +2d): NEAR, SOL, UNI, XRP etc. flipped relative to target sign (may be reductions).

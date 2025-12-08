@@ -4,6 +4,11 @@
 *deprecated*
 *deprecate*
 
+# Explicitly ignore heavy/archival directories so they don't get pushed
+# Added to ensure local folders with old data or deprecated code aren't committed
+maicro_ignore_old/
+deprecated/
+
 
 # Protect local deploy keys/private files
 *.key

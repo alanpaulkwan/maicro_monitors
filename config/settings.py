@@ -37,6 +37,6 @@ TABLE_CANDIDATES = {
     "trades": ["maicro_monitors.trades", "trading.user_fills", "user_fills"],
     "orders": ["maicro_monitors.orders", "trading.order_history"],
     "tracking_error": ["maicro_monitors.tracking_error", "risk.tracking_error_daily"],
-    "account": ["maicro_monitors.account_snapshots"],
+    "account": ["maicro_monitors.account_snapshots", "maicro_logs.live_account"],
     "positions": ["maicro_monitors.positions_snapshots"],
 }

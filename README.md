@@ -1,60 +1,119 @@
 # Maicro Monitors
 
-Hyperliquid trading monitoring and data ingestion system.
+Monitors for Hyperliquid trading built around ClickHouse:
 
-## 🚀 Current Architecture (Local-First)
+- Ingests Hyperliquid account/positions/trades/funding/ledger/candles.
+- Stores data in `maicro_monitors.*` on chenlin + ClickHouse Cloud.
+- Computes tracking error & PnL.
+- Provides a Streamlit dashboard and scheduled emails/alerts.
 
-We have consolidated individual monitors into a single orchestrator that runs locally and syncs to the cloud.
+Architecture is “buffer first, then flush”:
 
-**See [plan.md](plan.md) for the detailed status and roadmap.**
+> Hyperliquid HTTP → `data/buffer/*.parquet` → ClickHouse (chenlin + cloud)
 
-### Key Scripts
+## Quickstart
 
-- **`scripts/orchestrate_monitors.py`**: The main ingestion engine. Runs locally, collects all data (Trades, Orders, Account, OHLCV, etc.), and writes to the Local ClickHouse.
-- **`scripts/sync_to_remote.py`**: Synchronizes data from Local ClickHouse to Remote Cloud ClickHouse.
-- **`scripts/run_monitors_and_sync.sh`**: Wrapper script for cron jobs (runs Orchestrator + Sync).
-- **`05_pnl_calculator/pnl_calculator.py`**: Computes realized PnL, funding, unrealized PnL, and NAV PnL from recent snapshots.
-- **`05_tracking_error/tracking_error_calculator.py`**: Mirrors the ipynb methodology; compares live account returns vs model targets using `maicro_logs.live_account`, `maicro_logs.positions_jianan_v6`, and `maicro_monitors.candles` (forward returns). Defaults to 60-day lookback; override with `--lookback`.
+```bash
+pip install -r requirements.txt
 
-### Setup
+# 1) Create core tables (maicro_monitors.*) on chenlin
+python3 scripts/init_db.py
 
-1.  **Install Dependencies**:
-    ```bash
-    pip install -r requirements.txt
-    ```
+# 2) Run a one-off ingest and flush
+python3 scheduled_processes/scheduled_ping_hyperliquid.py   # buffer-only, talks to Hyperliquid
+python3 scheduled_processes/flush_hyperliquid_buffers.py     # writes to chenlin + ClickHouse Cloud
 
-2.  **Configure**:
-    Ensure `config/settings.py` has the correct credentials for both Local and Remote ClickHouse.
+# 3) Compute tracking error & PnL (optional one-off)
+python3 05_tracking_error/tracking_error_calculator.py --lookback 60
+python3 05_pnl_calculator/pnl_calculator.py
 
-3.  **Initialize DB**:
-    ```bash
-    python3 scripts/init_db.py
-    ```
+# 4) Start the dashboard
+export MAICRO_DASH_PASSWORD="MyStrongPassword"
+dashboard/run_dashboard.sh
+```
 
-4.  **Run Manually**:
-    ```bash
-    ./scripts/run_monitors_and_sync.sh
-    ```
+> ⚠️ Note: Local archives or deprecated folders are intentionally ignored from commits/pushes.
+> The directories `maicro_ignore_old/` and `deprecated/` are kept out of the repository and won't be pushed.
 
-5.  **Install Cron**:
-    ```bash
-    python3 scripts/generate_cron.py
-    ```
+## Dashboard Security
 
-### PnL & Tracking Error (ipynb-aligned)
+The Streamlit dashboard can be password-protected using the `MAICRO_DASH_PASSWORD` environment variable. When set, a password prompt appears in the dashboard's sidebar and the main content is blocked until authentication succeeds.
 
-- **Tracking Error** (default last 60 days):
-  ```bash
-  python3 05_tracking_error/tracking_error_calculator.py --lookback 60
-  ```
-  Uses the same tables as the notebook: live NAV from `maicro_logs.live_account`, model targets from `maicro_logs.positions_jianan_v6`, and forward returns from `maicro_monitors.candles` (`interval='1d'`). Results are stored in `maicro_monitors.tracking_error` (daily + 7d rolling).
+To run the dashboard and require a password use:
 
-- **PnL Calculator** (recent window adjustable via code param):
-  ```bash
-  python3 05_pnl_calculator/pnl_calculator.py
-  ```
-  Aggregates realized, unrealized, funding, and NAV PnL using recent trades, funding payments, positions snapshots, account snapshots, and candles.
+```bash
+export MAICRO_DASH_PASSWORD="MyStrongPassword"
+dashboard/run_dashboard.sh
+```
 
-## 📂 Legacy Modules
+To run without requiring a password (for quick local debugging):
 
-The numbered folders (`01_trade_logger`, etc.) contain the original logic but are now superseded by the orchestrator script. They are kept for reference.
+```bash
+export FORCE_NO_PASSWORD=1
+dashboard/run_dashboard.sh
+```
+
+## Scheduled Processes
+
+All cron suggestions live in `scheduled_processes/cron.md`. The key jobs:
+
+1. **Hyperliquid ingest (buffer + flush)**
+
+   - `scheduled_processes/scheduled_ping_hyperliquid.py` (hourly, buffer‑only)  
+     Polls Hyperliquid and writes Parquet files under `data/buffer/` for:
+     account, positions, trades, orders, funding, ledger, candles.
+
+   - `scheduled_processes/flush_hyperliquid_buffers.py` (every 3h)  
+     Reads `data/buffer/*.parquet` and inserts into:
+       - chenlin ClickHouse (`CLICKHOUSE_LOCAL_CONFIG`)
+       - ClickHouse Cloud (`CLICKHOUSE_REMOTE_CONFIG`)
+     targets: `maicro_monitors.account_snapshots`, `positions_snapshots`,
+     `trades`, `orders`, `funding_payments`, `ledger_updates`, `candles`.
+
+2. **Cloud → chenlin down‑sync (every 6h)**
+
+   - `scheduled_processes/pull_data_downward_from_cloud.py`  
+     Pulls from ClickHouse Cloud to chenlin for:
+       - `hyperliquid.*`
+       - `maicro_logs.*` (excluding deprecated `positions_jianan*` v1–v5)
+       - `binance.*`  
+     Uses per‑table cursor columns (e.g. `ts`, `inserted_at`) for incremental sync.
+
+3. **Daily Emails (optional)**
+
+   - `scheduled_processes/emails/daily/targets_vs_actuals_daily.py`  
+     Target‑vs‑actual positions (Jianan v6 targets vs live positions).
+
+   - `scheduled_processes/emails/daily/table_staleness_daily.py`  
+     Daily data freshness summary for key `maicro_*` tables.
+
+See `scheduled_processes/cron.md` for the exact crontab lines.
+
+## Manual / experimental jobs
+
+These scripts exist but are not yet wired into the default cron schedule.
+Run them manually while iterating on their behavior.
+
+- Tracking error (experimental):
+  - `python3 05_tracking_error/tracking_error_calculator.py --lookback 60`
+
+- PnL calculator (experimental):
+  - `python3 05_pnl_calculator/pnl_calculator.py`
+
+- Alerts / system health (experimental):
+  - `python3 ops/check_alerts.py`
+
+Alerts use Resend; configure `RESEND_API_KEY` and email settings via
+environment variables or `config/settings.py`.
+
+## Deprecated orchestration path
+
+Older “all‑in‑one” orchestrator scripts are still present but no longer
+recommended:
+
+- `scripts/orchestrate_monitors.py` — older ingest (Hyperliquid → buffer)
+- `scripts/sync_to_remote.py` — older local → cloud sync
+- `scripts/run_monitors_and_sync.sh` — previous cron wrapper
+
+New setups should prefer the explicit `scheduled_processes/*` jobs
+documented above.

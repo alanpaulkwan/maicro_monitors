@@ -1,0 +1,30 @@
+================================================================================
+EXECUTIVE SUMMARY: LAWRENCE EXECUTION DIAGNOSIS
+================================================================================
+
+OVERALL METRICS (using all aligned data):
+  Total targets (from positions_jianan_v6): 13,187
+  Targets with live data available: 2,244
+  Matched (both target & actual): 1,872 (83.4%)
+  Sign correct: 1,246 (66.6% of matched)
+  Good execution (≤5% weight diff): 899 (48.0% of matched)
+
+KEY FINDINGS:
+
+1. DATA GAPS: 10,965 targets have no live_positions data (logging stopped)
+2. UNEXPLAINED MISSING: 241 targets should have been traded but weren't
+3. WRONG DIRECTION: 370 positions have opposite sign from target
+4. BAD SIZING: 6 positions are >20% off from target weight
+
+ROOT CAUSES OF MISSING TRADES:
+  - logging_gap: 10,965 (96.9%)
+  - unknown: 241 (2.1%)
+  - weekend: 109 (1.0%)
+
+RECOMMENDATIONS:
+  1. Fix logging gaps (Nov 5-30 has no data)
+  2. Investigate 'unknown' missing trades
+  3. Review sign-wrong cases (might be T+1 vs T+2 offset issue)
+  4. Tighten execution to reduce >20% weight deviations
+
+================================================================================

@@ -7,6 +7,9 @@ SSH_KEY_PATH="/home/apkwan/.ssh/id_ed25519_maicro_monitors"
 # Ensure we are in the script's directory
 cd "$(dirname "$0")"
 
+# Make sure large or deprecated local directories are not pushed
+# We want to keep `maicro_ignore_old/` and `deprecated/` out of the repo and avoid pushing them
+
 # Initialize git if needed
 if [ ! -d ".git" ]; then
     echo "Initializing git repository..."
@@ -30,6 +33,11 @@ else
     # Ensure remote URL is correct
     git remote set-url origin "$REPO_URL"
 fi
+
+# Untrack certain directories if they were previously tracked so they don't get pushed
+echo "Ensuring maicro_ignore_old/ and deprecated/ are not tracked by git (if they were previously committed)..."
+# --ignore-unmatch prevents git from exiting non-zero if those paths don't exist or aren't tracked
+git rm -r --cached --ignore-unmatch maicro_ignore_old deprecated || true
 
 # Add all files
 echo "Adding files..."

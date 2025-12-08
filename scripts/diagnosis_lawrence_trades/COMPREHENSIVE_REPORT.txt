@@ -1,0 +1,175 @@
+
+================================================================================
+COMPREHENSIVE TAXONOMY REPORT: LAWRENCE EXECUTION DIAGNOSIS
+================================================================================
+Generated: 2025-12-08
+
+================================================================================
+PART 1: DATA AVAILABILITY
+================================================================================
+
+Total targets from positions_jianan_v6: 13,187 (373 days from Dec 2024 - Dec 2025)
+Live_positions data exists for only: 64 days (Aug 9 - Dec 5, 2025)
+
+MAJOR DATA GAPS:
+- Dec 2024 - Aug 2025: No live trading data (pre-launch)
+- Aug 10 - Sep 2: 24 days missing
+- Nov 5 - Nov 30: 25 days missing (MAJOR OUTAGE)
+- Various single days: Oct 1, 11, 13, 22, 24, 29, Nov 2
+
+→ 83% of targets (10,965) have NO live_positions data to compare against
+
+================================================================================
+PART 2: EXECUTION FUNNEL (for 2,244 analyzable targets)
+================================================================================
+
+STAGE 1: COVERAGE (Target → Actual Existence)
+---------------------------------------------
+Starting with: 2,244 targets that have live_positions data
+
+✓ Both matched:         1,872 (83.4%)  → Position exists for target symbol
+✗ Target only:            350 (15.6%)  → Target in model, NO actual position
+✗ Actual only:             22 (1.0%)   → Position exists, NOT in model
+
+Loss at Stage 1: 350 targets not executed (15.6%)
+
+STAGE 2: DIRECTION (Sign Agreement)
+-----------------------------------
+Starting with: 1,872 matched positions
+
+✓ Sign correct:         1,246 (66.6%)  → Long/short matches target
+✗ Sign wrong:             370 (19.8%)  → Position is OPPOSITE direction
+? Missing weight:         256 (13.7%)  → Data quality issue
+
+Loss at Stage 2: 370 wrong-direction trades (19.8% of matched)
+
+STAGE 3: MAGNITUDE (Size Accuracy)
+----------------------------------
+Starting with: 1,246 sign-correct positions
+
+✓ Within 5%:              899 (72.2%)  → Excellent execution
+✓ Within 10%:             285 (22.9%)  → Acceptable
+✗ Within 20%:              56 (4.5%)   → Off-size
+✗ Over 20%:                 6 (0.5%)   → Bad execution
+
+Loss at Stage 3: 62 poorly-sized positions (5.0% of sign-correct)
+
+================================================================================
+PART 3: END-TO-END SUCCESS METRICS
+================================================================================
+
+FUNNEL SUMMARY:
+  2,244 targets with live data
+     ↓ -350 not executed
+  1,872 matched
+     ↓ -370 wrong direction
+  1,246 sign-correct
+     ↓ -62 wrong size (>10% off)
+  1,184 SUCCESSFUL (within 10%)
+
+END-TO-END SUCCESS RATE: 1,184 / 2,244 = 52.8%
+
+LOSS ATTRIBUTION:
+  - Coverage failures (not executed):     350 (31.6% of all losses)
+  - Direction failures (wrong sign):      370 (34.9% of all losses)
+  - Magnitude failures (>10% off size):    62 (5.8% of all losses)
+  - Missing weight data:                  256 (24.2% of all losses) [data quality]
+  
+  Total losses: 1,060 out of 2,244 targets
+
+================================================================================
+PART 4: ROOT CAUSE ANALYSIS
+================================================================================
+
+A. WHY ARE 350 TARGETS NOT EXECUTED? (Target-Only Failures)
+-----------------------------------------------------------
+  - Weekend trades:           109 (31.1%)  → No trading on weekends
+  - Unknown reason:           241 (68.9%)  → NEEDS INVESTIGATION
+
+  Symbols most often not executed:
+    BTC, ETH, SOL, LINK, AVAX (major coins - surprising!)
+
+B. WHY ARE 370 POSITIONS WRONG DIRECTION? (Sign-Wrong Failures)
+---------------------------------------------------------------
+  Symbols with most wrong-sign cases:
+    ADA (25), UNI (22), NEAR (21), XRP (21), ARB (20), SUI (20)
+
+  Possible causes:
+  1. Reduction/close orders being logged as "current" position
+  2. Stale position data (logged before trade executed)
+  3. Actual execution bug in the trading system
+
+C. WHY ARE 62 POSITIONS POORLY SIZED? (Magnitude Failures)
+----------------------------------------------------------
+  - Most (56) are within 10-20% of target: acceptable slippage
+  - Only 6 positions are >20% off: market conditions or bugs
+
+================================================================================
+PART 5: OFFSET ANALYSIS (T+0 vs T+1 vs T+2)
+================================================================================
+
+Original hypothesis: Lawrence was trading T+1 instead of T+2
+
+TEST RESULTS:
+  Offset=0 (same day):     66.6% sign agreement  ← BEST
+  Offset=1 (T+1):          62.2% sign agreement
+  Offset=2 (T+2):          59.9% sign agreement
+
+CONCLUSION: live_positions.target_date DIRECTLY matches positions_jianan_v6.date
+            There is NO offset - Lawrence was trading same-day (T+0)
+
+This contradicts the hypothesis that he was trading T+1 instead of T+2.
+The target_date field in live_positions is the SIGNAL date, not execution date.
+
+================================================================================
+PART 6: RECOMMENDATIONS
+================================================================================
+
+IMMEDIATE ACTIONS:
+1. FIX LOGGING: 83% of data is missing due to logging gaps
+   - Investigate Nov 5-30 outage (25 days of no data)
+   - Ensure live_positions is written every trading day
+
+2. INVESTIGATE WRONG-DIRECTION: 20% of matched trades have wrong sign
+   - Focus on ADA, UNI, NEAR, XRP, ARB symbols
+   - Check if "current" position reflects pre-trade or post-trade state
+   - May need to log positions at different points in execution cycle
+
+3. INVESTIGATE 241 UNEXPLAINED MISSING TRADES
+   - These are NOT weekend, NOT below min_usd, NOT missing metadata
+   - Need to check order logs for these specific (date, symbol) pairs
+   - Could be execution failures, API errors, or logic bugs
+
+4. VERIFY THE OFFSET ASSUMPTION
+   - Data shows T+0 alignment is best (66.6% sign agreement)
+   - This suggests the trading system IS using same-day signals
+   - If T+2 was intended, there may be a configuration issue
+
+LONGER-TERM IMPROVEMENTS:
+5. Add execution logging that captures:
+   - Order sent timestamp
+   - Order filled timestamp  
+   - Pre-trade position
+   - Post-trade position
+   - Rejection reasons if any
+
+6. Add three-way comparison:
+   - positions_jianan_v6 (model signal)
+   - live_positions.target (what executor intended)
+   - live_positions.current (what actually happened)
+
+================================================================================
+PART 7: FILES GENERATED
+================================================================================
+
+scripts/adhoc/diagnosis_lawrence_trades/
+├── aligned_t0.csv         # Target vs actual alignment (offset=0)
+├── aligned_t1.csv         # Target vs actual alignment (offset=1)
+├── aligned_t2.csv         # Target vs actual alignment (offset=2)
+├── diagnosed_t0.csv       # Full diagnosis with taxonomy (offset=0)
+├── diagnosed_t1.csv       # Full diagnosis with taxonomy (offset=1)
+├── diagnosed_t2.csv       # Full diagnosis with taxonomy (offset=2)
+├── EXECUTIVE_SUMMARY.txt  # Quick summary
+└── COMPREHENSIVE_REPORT.txt # This file
+
+================================================================================
