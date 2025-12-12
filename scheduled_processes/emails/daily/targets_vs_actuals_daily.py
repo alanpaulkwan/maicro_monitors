@@ -27,7 +27,7 @@ if REPO_ROOT not in sys.path:
     sys.path.append(REPO_ROOT)
 
 from modules.clickhouse_client import query_df, execute
-from config.settings import get_secret
+from config.settings import get_secret, HYPERLIQUID_ADDRESSES
 
 RESEND_API_KEY = get_secret("RESEND_API_KEY")
 TO_EMAIL = os.getenv("ALERT_EMAIL", "alanpaulkwan@gmail.com")
@@ -44,9 +44,9 @@ def _normalize_weights(df: pd.DataFrame, weight_col: str = "weight") -> pd.Serie
         return pd.Series(index=df.index, dtype=float)
     return df[weight_col].astype(float).fillna(0.0)
 
-def _load_actuals_snapshot(snapshot_date: date) -> Tuple[pd.DataFrame, float]:
+def _load_actuals_snapshot(snapshot_date: date, address: str) -> Tuple[pd.DataFrame, float]:
     """
-    Load the last snapshot of the given date from maicro_monitors.
+    Load the last snapshot of the given date from maicro_monitors for a specific address.
     Returns (positions_df, equity_usd).
     Uses a single query with join/subquery to ensure timestamp alignment.
     """
@@ -55,6 +55,7 @@ def _load_actuals_snapshot(snapshot_date: date) -> Tuple[pd.DataFrame, float]:
         SELECT max(timestamp) as ts
         FROM maicro_monitors.account_snapshots
         WHERE toDate(timestamp) = %(d)s
+          AND address = %(addr)s
     )
     SELECT 
         p.coin as symbol, 
@@ -62,11 +63,13 @@ def _load_actuals_snapshot(snapshot_date: date) -> Tuple[pd.DataFrame, float]:
         p.szi,
         a.accountValue as equity
     FROM maicro_monitors.positions_snapshots p
-    JOIN maicro_monitors.account_snapshots a ON p.timestamp = a.timestamp
+    JOIN maicro_monitors.account_snapshots a ON p.timestamp = a.timestamp AND p.address = a.address
     WHERE p.timestamp = (SELECT ts FROM latest_ts)
       AND a.timestamp = (SELECT ts FROM latest_ts)
+      AND p.address = %(addr)s
+      AND a.address = %(addr)s
     """
-    df = query_df(sql, params={"d": snapshot_date})
+    df = query_df(sql, params={"d": snapshot_date, "addr": address})
     
     if df.empty:
         return pd.DataFrame(), 0.0
@@ -116,108 +119,124 @@ def calculate_te(targets: pd.DataFrame, actuals: pd.DataFrame) -> Tuple[float, p
     te = merged["abs_diff"].sum()
     return te, merged
 
-def record_te(date_val: date, lag: int, te: float, target_date: date):
+def record_te(date_val: date, lag: int, te: float, target_date: date, address: str):
     """Insert TE record into ClickHouse."""
     sql = """
     INSERT INTO maicro_monitors.tracking_error_multilag
-    (date, strategy_id, lag, te, target_date, timestamp)
+    (date, strategy_id, lag, te, target_date, timestamp, address)
     VALUES
-    (%(date)s, %(strat)s, %(lag)s, %(te)s, %(tgt)s, now())
+    (%(date)s, %(strat)s, %(lag)s, %(te)s, %(tgt)s, now(), %(addr)s)
     """
     params = {
         "date": date_val,
         "strat": STRATEGY_ID,
         "lag": lag,
         "te": te,
-        "tgt": target_date
+        "tgt": target_date,
+        "addr": address
     }
     try:
         execute(sql, params=params)
     except Exception as e:
-        print(f"Error inserting TE for {date_val} lag {lag}: {e}")
+        print(f"Error inserting TE for {date_val} lag {lag} addr {address}: {e}")
 
 def format_email_html(
     run_date: date,
-    equity: float,
-    te_results: List[Dict],
-    detail_df: pd.DataFrame,
-    ideal_lag: int
+    results_by_address: Dict[str, Dict]
 ) -> str:
-    # 1. Summary Table of Lags
-    te_rows = ""
-    for res in te_results:
-        is_ideal = (res["lag"] == ideal_lag)
-        style = "background-color:#dcfce7; font-weight:bold;" if is_ideal else ""
-        te_rows += f"""
-        <tr style="{style}">
-            <td style="padding:4px 8px;">T-{res['lag']}</td>
-            <td style="padding:4px 8px;">{res['target_date']}</td>
-            <td style="padding:4px 8px; text-align:right;">{res['te']:.4f}</td>
-            <td style="padding:4px 8px; text-align:right;">{res['te']*100:.2f}%</td>
-        </tr>
-        """
     
-    # 2. Detailed Breakdown (for Ideal Lag)
-    detail_df = detail_df.sort_values("abs_diff", ascending=False)
-    pos_rows = ""
-    for _, row in detail_df.iterrows():
-        sym = row["symbol"]
-        tgt = row["target_weight"]
-        act = row["actual_weight"]
-        diff = row["diff"]
+    sections = ""
+    
+    for address, data in results_by_address.items():
+        equity = data['equity']
+        te_results = data['te_results']
+        detail_df = data['detail_df']
+        ideal_lag = data['ideal_lag']
         
-        # Color coding
-        status_color = ""
-        if abs(diff) > 0.05: status_color = "background-color:#fee2e2;" # Red > 5%
-        elif abs(diff) > 0.02: status_color = "background-color:#fef3c7;" # Yellow > 2%
+        # 1. Summary Table of Lags
+        te_rows = ""
+        for res in te_results:
+            is_ideal = (res["lag"] == ideal_lag)
+            style = "background-color:#dcfce7; font-weight:bold;" if is_ideal else ""
+            te_rows += f"""
+            <tr style="{style}">
+                <td style="padding:4px 8px;">T-{res['lag']}</td>
+                <td style="padding:4px 8px;">{res['target_date']}</td>
+                <td style="padding:4px 8px; text-align:right;">{res['te']:.4f}</td>
+                <td style="padding:4px 8px; text-align:right;">{res['te']*100:.2f}%</td>
+            </tr>
+            """
         
-        pos_rows += f"""
-        <tr>
-            <td style="padding:4px 8px;">{sym}</td>
-            <td style="padding:4px 8px; text-align:right;">{tgt*100:.2f}%</td>
-            <td style="padding:4px 8px; text-align:right;">{act*100:.2f}%</td>
-            <td style="padding:4px 8px; text-align:right; {status_color}">{diff*100:+.2f}%</td>
-        </tr>
+        # 2. Detailed Breakdown (for Ideal Lag)
+        if not detail_df.empty:
+            detail_df = detail_df.sort_values("abs_diff", ascending=False)
+            pos_rows = ""
+            for _, row in detail_df.iterrows():
+                sym = row["symbol"]
+                tgt = row["target_weight"]
+                act = row["actual_weight"]
+                diff = row["diff"]
+                
+                # Color coding
+                status_color = ""
+                if abs(diff) > 0.05: status_color = "background-color:#fee2e2;" # Red > 5%
+                elif abs(diff) > 0.02: status_color = "background-color:#fef3c7;" # Yellow > 2%
+                
+                pos_rows += f"""
+                <tr>
+                    <td style="padding:4px 8px;">{sym}</td>
+                    <td style="padding:4px 8px; text-align:right;">{tgt*100:.2f}%</td>
+                    <td style="padding:4px 8px; text-align:right;">{act*100:.2f}%</td>
+                    <td style="padding:4px 8px; text-align:right; {status_color}">{diff*100:+.2f}%</td>
+                </tr>
+                """
+        else:
+            pos_rows = "<tr><td colspan='4'>No positions found</td></tr>"
+
+        sections += f"""
+        <div style="margin-bottom: 30px; border-bottom: 1px solid #ccc; padding-bottom: 20px;">
+            <h3>Account: {address}</h3>
+            <p><strong>Equity:</strong> ${equity:,.2f}</p>
+            
+            <h4>Tracking Error by Lag</h4>
+            <table border="1" style="border-collapse: collapse; border-color: #e5e7eb;">
+                <thead style="background-color: #f3f4f6;">
+                    <tr>
+                        <th style="padding:4px 8px;">Lag</th>
+                        <th style="padding:4px 8px;">Target Date</th>
+                        <th style="padding:4px 8px;">TE (Sum Abs)</th>
+                        <th style="padding:4px 8px;">TE %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {te_rows}
+                </tbody>
+            </table>
+            
+            <h4>Detailed Breakdown (Lag {ideal_lag})</h4>
+            <p>Target Date: {run_date - timedelta(days=ideal_lag)}</p>
+            <table border="1" style="border-collapse: collapse; border-color: #e5e7eb; font-size: 12px;">
+                <thead style="background-color: #f3f4f6;">
+                    <tr>
+                        <th style="padding:4px 8px;">Symbol</th>
+                        <th style="padding:4px 8px;">Target %</th>
+                        <th style="padding:4px 8px;">Actual %</th>
+                        <th style="padding:4px 8px;">Diff %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {pos_rows}
+                </tbody>
+            </table>
+        </div>
         """
 
     html = f"""
     <html>
     <body style="font-family: sans-serif; color: #111827;">
         <h2>Maicro Daily Tracking Error Report</h2>
-        <p><strong>Date:</strong> {run_date} <br>
-           <strong>Equity:</strong> ${equity:,.2f}</p>
-        
-        <h3>Tracking Error by Lag</h3>
-        <p>Comparison of actual holdings (T) vs signals from (T-Lag).</p>
-        <table border="1" style="border-collapse: collapse; border-color: #e5e7eb;">
-            <thead style="background-color: #f3f4f6;">
-                <tr>
-                    <th style="padding:4px 8px;">Lag</th>
-                    <th style="padding:4px 8px;">Target Date</th>
-                    <th style="padding:4px 8px;">TE (Sum Abs)</th>
-                    <th style="padding:4px 8px;">TE %</th>
-                </tr>
-            </thead>
-            <tbody>
-                {te_rows}
-            </tbody>
-        </table>
-        
-        <h3>Detailed Breakdown (Lag {ideal_lag})</h3>
-        <p>Target Date: {run_date - timedelta(days=ideal_lag)}</p>
-        <table border="1" style="border-collapse: collapse; border-color: #e5e7eb; font-size: 12px;">
-            <thead style="background-color: #f3f4f6;">
-                <tr>
-                    <th style="padding:4px 8px;">Symbol</th>
-                    <th style="padding:4px 8px;">Target %</th>
-                    <th style="padding:4px 8px;">Actual %</th>
-                    <th style="padding:4px 8px;">Diff %</th>
-                </tr>
-            </thead>
-            <tbody>
-                {pos_rows}
-            </tbody>
-        </table>
+        <p><strong>Date:</strong> {run_date}</p>
+        {sections}
     </body>
     </html>
     """
@@ -251,54 +270,68 @@ def send_email(subject: str, html_body: str):
 def main():
     print("[daily_te] Starting...")
     
-    # Analyze "Yesterday" by default, as it's a daily morning report for the closed day
-    # Or use "Today" if running late? Usually cron runs at 08:00 UTC, covering previous day?
-    # Actually, cron says 08:00. This is usually for the *current* state if we are trading continuously.
-    # However, snapshot-based calc is usually T vs T.
-    # Let's use "Today" (current UTC date) - 0 days? Or Yesterday?
-    # If we run at 08:00 UTC, we likely want to check the state *now* (or latest snapshot today)
-    # vs targets.
-    # The existing script used "latest run context".
-    # I will use TODAY's date (UTC).
     run_date = datetime.utcnow().date()
     
-    # 1. Load Actuals
-    actuals_df, equity = _load_actuals_snapshot(run_date)
-    if actuals_df.empty:
-        # Fallback to yesterday if today has no snapshot yet (e.g. running at 00:01)
-        run_date = run_date - timedelta(days=1)
-        actuals_df, equity = _load_actuals_snapshot(run_date)
-        
-    if actuals_df.empty:
-        print(f"No actual snapshots found for {run_date} or yesterday. Exiting.")
-        return
-        
-    print(f"Loaded actuals for {run_date}. Equity: ${equity:,.2f}")
+    results_by_address = {}
     
-    te_results = []
-    ideal_lag = 2
-    ideal_detail_df = pd.DataFrame()
-    
-    # 2. Loop Lags
-    for lag in range(4): # 0, 1, 2, 3
-        target_date = run_date - timedelta(days=lag)
-        targets_df = _load_targets(target_date)
+    for address in HYPERLIQUID_ADDRESSES:
+        print(f"Processing address: {address}")
         
-        te, detail = calculate_te(targets_df, actuals_df)
-        record_te(run_date, lag, te, target_date)
-        
-        te_results.append({
-            "lag": lag,
-            "target_date": target_date,
-            "te": te
-        })
-        
-        if lag == ideal_lag:
-            ideal_detail_df = detail
+        # 1. Load Actuals
+        actuals_df, equity = _load_actuals_snapshot(run_date, address)
+        if actuals_df.empty:
+            # Fallback to yesterday
+            prev_date = run_date - timedelta(days=1)
+            actuals_df, equity = _load_actuals_snapshot(prev_date, address)
             
+        if actuals_df.empty:
+            print(f"  No actual snapshots found for {run_date} or yesterday for {address}. Skipping.")
+            continue
+            
+        print(f"  Loaded actuals. Equity: ${equity:,.2f}")
+        
+        te_results = []
+        ideal_lag = 2
+        ideal_detail_df = pd.DataFrame()
+        
+        # 2. Loop Lags
+        for lag in range(4): # 0, 1, 2, 3
+            target_date = run_date - timedelta(days=lag)
+            targets_df = _load_targets(target_date)
+            
+            te, detail = calculate_te(targets_df, actuals_df)
+            record_te(run_date, lag, te, target_date, address)
+            
+            te_results.append({
+                "lag": lag,
+                "target_date": target_date,
+                "te": te
+            })
+            
+            if lag == ideal_lag:
+                ideal_detail_df = detail
+        
+        results_by_address[address] = {
+            "equity": equity,
+            "te_results": te_results,
+            "detail_df": ideal_detail_df,
+            "ideal_lag": ideal_lag
+        }
+
+    if not results_by_address:
+        print("No data found for any address. Exiting.")
+        return
+
     # 3. Send Email
-    html = format_email_html(run_date, equity, te_results, ideal_detail_df, ideal_lag)
-    subject = f"[MAICRO] Daily Tracking Error: {te_results[ideal_lag]['te']*100:.2f}% (T-{ideal_lag})"
+    html = format_email_html(run_date, results_by_address)
+    
+    # Subject: Use first address TE or average? Let's list them if few, or just say "Multi-Account"
+    if len(results_by_address) == 1:
+        addr = list(results_by_address.keys())[0]
+        te = results_by_address[addr]['te_results'][2]['te']
+        subject = f"[MAICRO] Daily Tracking Error: {te*100:.2f}% (T-2)"
+    else:
+        subject = f"[MAICRO] Daily Tracking Error Report ({len(results_by_address)} Accounts)"
     
     send_email(subject, html)
     print("[daily_te] Done.")

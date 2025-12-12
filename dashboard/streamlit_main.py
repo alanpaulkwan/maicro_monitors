@@ -11,6 +11,14 @@ import pandas as pd
 import streamlit as st
 import os
 import logging
+import sys
+from pathlib import Path
+
+# Ensure the repository root is on sys.path so that `config` and `modules`
+# can be imported regardless of how Streamlit is launched.
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from config.settings import HYPERLIQUID_ADDRESS, TABLE_CANDIDATES
 from modules.clickhouse_client import first_existing, query_df, table_exists
@@ -328,6 +336,170 @@ def load_24h_pnl():
         return None
 
 
+@st.cache_data(ttl=300)
+def load_model_backtest_data(lookback_days: int = 180):
+    """Load model backtest daily returns (T-1, T-2) and weights.
+
+    Uses positions_jianan_v6 as the model weights and maicro_monitors.candles
+    (interval='1d') for market closes.
+    """
+    # Look back a bit further to ensure we have enough price history
+    end_date = pd.Timestamp.now().normalize().date()
+    start_date = end_date - pd.Timedelta(days=lookback_days + 5)
+    start_str = start_date.isoformat()
+    end_str = end_date.isoformat()
+
+    # Load earliest target per (date, symbol) with finite, non-zero weight
+    targets = query_df(
+        """
+        SELECT date, symbol, weight, pred_ret, inserted_at
+        FROM (
+            SELECT date, symbol, weight, pred_ret, inserted_at
+            FROM maicro_logs.positions_jianan_v6
+            WHERE date BETWEEN %(start)s AND %(end)s
+              AND weight IS NOT NULL AND isFinite(weight) AND weight != 0
+            ORDER BY date, symbol, inserted_at
+            LIMIT 1 BY date, symbol
+        )
+        ORDER BY date, symbol
+        """,
+        params={"start": start_str, "end": end_str},
+    )
+    if targets.empty:
+        return {
+            "returns_t1": pd.Series(dtype=float),
+            "returns_t2": pd.Series(dtype=float),
+            "weights": pd.DataFrame(),
+            "targets": pd.DataFrame(),
+        }
+
+    targets["date"] = pd.to_datetime(targets["date"])
+    targets["symbol"] = targets["symbol"].str.upper().str.strip()
+
+    # Wide weights matrix: date x symbol
+    weights = (
+        targets.pivot(index="date", columns="symbol", values="weight")
+        .sort_index()
+    )
+    if weights.empty:
+        return {
+            "returns_t1": pd.Series(dtype=float),
+            "returns_t2": pd.Series(dtype=float),
+            "weights": pd.DataFrame(),
+            "targets": targets,
+        }
+
+    first_date = weights.index.min()
+    last_date = weights.index.max()
+    if pd.isna(first_date) or pd.isna(last_date):
+        return {
+            "returns_t1": pd.Series(dtype=float),
+            "returns_t2": pd.Series(dtype=float),
+            "weights": weights,
+            "targets": targets,
+        }
+
+    # Load daily closes from candles (interval='1d')
+    # Start a few days earlier to be safe for return calculation.
+    start_ts = (first_date - pd.Timedelta(days=3)).strftime("%Y-%m-%d 00:00:00")
+    prices_raw = query_df(
+        """
+        SELECT toDate(ts) AS date, coin, close
+        FROM maicro_monitors.candles
+        WHERE ts >= toDateTime(%(start_ts)s)
+          AND interval = '1d'
+        ORDER BY date, coin
+        """,
+        params={"start_ts": start_ts},
+    )
+    if prices_raw.empty:
+        return {
+            "returns_t1": pd.Series(dtype=float),
+            "returns_t2": pd.Series(dtype=float),
+            "weights": weights,
+            "targets": targets,
+        }
+
+    prices_raw["date"] = pd.to_datetime(prices_raw["date"])
+    prices_raw["coin"] = prices_raw["coin"].str.upper().str.strip()
+    price_pivot = (
+        prices_raw.pivot(index="date", columns="coin", values="close")
+        .sort_index()
+    )
+    if price_pivot.empty:
+        return {
+            "returns_t1": pd.Series(dtype=float),
+            "returns_t2": pd.Series(dtype=float),
+            "weights": weights,
+            "targets": targets,
+        }
+
+    # Forward daily returns: close_{t+1} / close_t - 1
+    market_returns = price_pivot.shift(-1) / price_pivot - 1.0
+
+    # Align on common dates and symbol universe
+    common_idx = weights.index.intersection(market_returns.index)
+    if common_idx.empty:
+        return {
+            "returns_t1": pd.Series(dtype=float),
+            "returns_t2": pd.Series(dtype=float),
+            "weights": weights,
+            "targets": targets,
+        }
+
+    weights = weights.loc[common_idx].fillna(0.0)
+    market_returns = (
+        market_returns.loc[common_idx]
+        .reindex(columns=weights.columns)
+        .fillna(0.0)
+    )
+
+    # Strategy returns with T-1 and T-2 execution lags
+    returns_t1 = (market_returns * weights.shift(1).fillna(0.0)).sum(axis=1)
+    returns_t2 = (market_returns * weights.shift(2).fillna(0.0)).sum(axis=1)
+
+    # Drop initial NaNs created by shifting (if any)
+    returns_t1 = returns_t1.dropna()
+    returns_t2 = returns_t2.dropna()
+
+    return {
+        "returns_t1": returns_t1,
+        "returns_t2": returns_t2,
+        "weights": weights,
+        "targets": targets,
+    }
+
+
+def _compute_return_metrics(daily_returns: pd.Series) -> dict:
+    """Compute Sharpe and related stats from daily returns (in decimal)."""
+    r = daily_returns.dropna()
+    if r.empty:
+        return {
+            "avg_daily": np.nan,
+            "vol_daily": np.nan,
+            "ann_return": np.nan,
+            "ann_vol": np.nan,
+            "sharpe": np.nan,
+            "n_days": 0,
+        }
+
+    avg_daily = r.mean()
+    vol_daily = r.std()
+    ann_factor = np.sqrt(252.0)
+    ann_return = (1.0 + avg_daily) ** 252 - 1.0
+    ann_vol = vol_daily * ann_factor
+    sharpe = (avg_daily / vol_daily) * ann_factor if vol_daily > 0 else np.nan
+
+    return {
+        "avg_daily": avg_daily,
+        "vol_daily": vol_daily,
+        "ann_return": ann_return,
+        "ann_vol": ann_vol,
+        "sharpe": sharpe,
+        "n_days": int(len(r)),
+    }
+
+
 # Staleness thresholds (in minutes)
 STALENESS_THRESHOLDS = {
     "trades": 5,
@@ -555,6 +727,121 @@ def render_pnl_equity():
             st.metric("Total Return", f"{total_return:.2f}%")
 
 
+def render_backtest():
+    """Render Backtest tab: T-1/T-2 equity curves + model holdings."""
+    st.subheader("Model Backtest: T-1 / T-2")
+
+    # Toggles (stacked vertically for better mobile layout)
+    show_curves = st.checkbox(
+        "Show backtest curves",
+        value=True,
+        key="bt_show_curves",
+        help="Toggle T-1 and T-2 equity curves and summary stats.",
+    )
+    show_positions = st.checkbox(
+        "Show model holdings for date",
+        value=True,
+        key="bt_show_positions",
+        help="Toggle the table of model-implied holdings for a selected date.",
+    )
+
+    # Lookback configuration
+    lookback_days = st.slider(
+        "Lookback window (days)",
+        min_value=30,
+        max_value=365,
+        value=180,
+        step=30,
+        help="Controls how many days of backtest history to load from ClickHouse.",
+        key="bt_lookback_days",
+    )
+
+    data = load_model_backtest_data(lookback_days)
+    ret_t1: pd.Series = data["returns_t1"]
+    ret_t2: pd.Series = data["returns_t2"]
+    weights: pd.DataFrame = data["weights"]
+    targets: pd.DataFrame = data["targets"]
+
+    if show_curves:
+        st.markdown("### Equity Curves (Index, base 100)")
+        if ret_t1.empty and ret_t2.empty:
+            st.warning("No backtest data available. Check maicro_logs.positions_jianan_v6 and maicro_monitors.candles.")
+        else:
+            curves = pd.DataFrame()
+            if not ret_t1.empty:
+                curves["T-1 equity"] = (1.0 + ret_t1).cumprod() * 100.0
+            if not ret_t2.empty:
+                curves["T-2 equity"] = (1.0 + ret_t2).cumprod() * 100.0
+
+            st.line_chart(curves, use_container_width=True)
+
+            # Metrics
+            st.markdown("### Backtest Statistics")
+            col1, col2 = st.columns(2)
+            if not ret_t1.empty:
+                m1 = _compute_return_metrics(ret_t1)
+                with col1:
+                    st.markdown("**T-1 (weights lag 1 day)**")
+                    st.metric("Sharpe (Ann.)", f"{m1['sharpe']:.2f}" if not np.isnan(m1["sharpe"]) else "N/A")
+                    st.metric("Ann. Return", f"{m1['ann_return']*100:.2f}%" if not np.isnan(m1["ann_return"]) else "N/A")
+                    st.metric("Ann. Vol", f"{m1['ann_vol']*100:.2f}%" if not np.isnan(m1["ann_vol"]) else "N/A")
+                    st.caption(f"N daily returns: {m1['n_days']}")
+            if not ret_t2.empty:
+                m2 = _compute_return_metrics(ret_t2)
+                with col2:
+                    st.markdown("**T-2 (weights lag 2 days)**")
+                    st.metric("Sharpe (Ann.)", f"{m2['sharpe']:.2f}" if not np.isnan(m2["sharpe"]) else "N/A")
+                    st.metric("Ann. Return", f"{m2['ann_return']*100:.2f}%" if not np.isnan(m2["ann_return"]) else "N/A")
+                    st.metric("Ann. Vol", f"{m2['ann_vol']*100:.2f}%" if not np.isnan(m2["ann_vol"]) else "N/A")
+                    st.caption(f"N daily returns: {m2['n_days']}")
+
+    if show_positions:
+        st.markdown("---")
+        st.markdown("### Model Holdings for Selected Date")
+
+        if targets.empty:
+            st.info("No model target data available in positions_jianan_v6 for this window.")
+            return
+
+        # Available dates from targets
+        available_dates = sorted(targets["date"].dt.date.unique())
+        if not available_dates:
+            st.info("No dates with model targets.")
+            return
+
+        default_date = available_dates[-1]
+        selected_date = st.selectbox(
+            "Backtest holdings date",
+            options=available_dates,
+            index=len(available_dates) - 1,
+            format_func=lambda d: d.strftime("%Y-%m-%d"),
+            key="bt_holdings_date",
+        )
+
+        # Filter targets for the selected date
+        mask = targets["date"].dt.date == selected_date
+        day_targets = targets.loc[mask].copy()
+        if day_targets.empty:
+            st.info("No holdings for the selected date.")
+            return
+
+        day_targets["abs_weight"] = day_targets["weight"].abs()
+        day_targets.sort_values("abs_weight", ascending=False, inplace=True)
+
+        # Display top holdings by absolute weight
+        display_cols = ["symbol", "weight", "pred_ret", "abs_weight"]
+        display_cols = [c for c in display_cols if c in day_targets.columns]
+        top_view = day_targets[display_cols].head(25)
+        st.dataframe(top_view, use_container_width=True)
+
+        if len(day_targets) > 25:
+            with st.expander("View all holdings for this date"):
+                st.dataframe(
+                    day_targets[display_cols],
+                    use_container_width=True,
+                )
+
+
 def render_positions():
     """Render Positions tab per plan."""
     st.subheader("Current Positions")
@@ -739,10 +1026,11 @@ def render_system_health():
 
 
 # Layout - tabs aligned with plan_dashboard.md
-overview_tab, pnl_tab, te_tab, positions_tab, trades_tab, health_tab = st.tabs(
+overview_tab, pnl_tab, backtest_tab, te_tab, positions_tab, trades_tab, health_tab = st.tabs(
     [
         "📊 Overview",
         "💰 PnL/Equity",
+        "📈 Backtest",
         "📏 Tracking Error",
         "📦 Positions",
         "🔄 Trades",
@@ -754,6 +1042,8 @@ with overview_tab:
     render_overview()
 with pnl_tab:
     render_pnl_equity()
+with backtest_tab:
+    render_backtest()
 with te_tab:
     render_tracking_error()
 with positions_tab:

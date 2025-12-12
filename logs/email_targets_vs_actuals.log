@@ -1,0 +1,36 @@
+/home/apkwan/standalone_git/maicro_monitors/scheduled_processes/emails/daily/targets_vs_actuals_daily.py:115: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+  merged = pd.merge(targets, actuals, on="symbol", how="outer").fillna(0.0)
+[daily_te] Starting...
+Processing address: 0x17f9d0098111D6Ae0915f980517264F082dB7206
+  Loaded actuals. Equity: $1,992.71
+Sending email to alanpaulkwan@gmail.com...
+Email sent.
+[daily_te] Done.
+/home/apkwan/standalone_git/maicro_monitors/scheduled_processes/emails/daily/targets_vs_actuals_daily.py:115: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+  merged = pd.merge(targets, actuals, on="symbol", how="outer").fillna(0.0)
+/home/apkwan/standalone_git/maicro_monitors/scheduled_processes/emails/daily/targets_vs_actuals_daily.py:115: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+  merged = pd.merge(targets, actuals, on="symbol", how="outer").fillna(0.0)
+[daily_te] Starting...
+Processing address: 0x17f9d0098111D6Ae0915f980517264F082dB7206
+  Loaded actuals. Equity: $1,991.51
+Sending email to alanpaulkwan@gmail.com...
+Email sent.
+[daily_te] Done.
+/home/apkwan/standalone_git/maicro_monitors/scheduled_processes/emails/daily/targets_vs_actuals_daily.py:115: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+  merged = pd.merge(targets, actuals, on="symbol", how="outer").fillna(0.0)
+/home/apkwan/standalone_git/maicro_monitors/scheduled_processes/emails/daily/targets_vs_actuals_daily.py:115: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+  merged = pd.merge(targets, actuals, on="symbol", how="outer").fillna(0.0)
+/home/apkwan/standalone_git/maicro_monitors/scheduled_processes/emails/daily/targets_vs_actuals_daily.py:115: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+  merged = pd.merge(targets, actuals, on="symbol", how="outer").fillna(0.0)
+[daily_te] Starting...
+Processing address: 0x17f9d0098111D6Ae0915f980517264F082dB7206
+  Loaded actuals. Equity: $2,005.53
+Sending email to alanpaulkwan@gmail.com...
+Email sent.
+[daily_te] Done.
+[daily_te] Starting...
+Processing address: 0x17f9d0098111D6Ae0915f980517264F082dB7206
+  Loaded actuals. Equity: $2,022.38
+Sending email to alanpaulkwan@gmail.com...
+Email sent.
+[daily_te] Done.

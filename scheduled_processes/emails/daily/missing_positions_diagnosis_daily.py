@@ -55,7 +55,9 @@ from scheduled_processes.emails.daily.targets_vs_actuals_daily import (  # type:
 )
 
 
-RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+from config.settings import get_secret
+
+RESEND_API_KEY = get_secret("RESEND_API_KEY")
 TO_EMAIL = os.getenv("ALERT_EMAIL", "alanpaulkwan@gmail.com")
 FROM_EMAIL = os.getenv("ALERT_FROM_EMAIL", "Maicro Monitors <alerts@resend.dev>")
 ORDERS_LOOKBACK_HOURS = int(os.getenv("MISSING_POS_ORDERS_LOOKBACK_HOURS", "36"))

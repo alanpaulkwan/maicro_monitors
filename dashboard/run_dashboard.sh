@@ -9,6 +9,11 @@ if [[ -z "${MAICRO_DASH_PASSWORD:-}" && -z "${FORCE_NO_PASSWORD:-}" ]]; then
   exit 1
 fi
 
+# Ensure we run from the repo root so that `config` and other top-level
+# packages are importable by Streamlit.
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+cd "${REPO_ROOT}"
+
 echo "Starting Streamlit dashboard (port 8501)..."
-cd "$(dirname "$0")"
-exec streamlit run streamlit_main.py --server.port 8501 --server.headless true
+exec streamlit run dashboard/streamlit_main.py --server.port 8501 --server.headless true

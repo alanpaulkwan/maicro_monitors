@@ -12,14 +12,15 @@ Tables covered (by default):
   - maicro_logs.live_account (ts)
   - maicro_logs.live_positions (ts)
   - maicro_logs.positions_jianan_v6 (inserted_at)
-  - maicro_monitors.account_snapshots (timestamp)
-  - maicro_monitors.positions_snapshots (timestamp)
-  - maicro_monitors.trades (time)
-  - maicro_monitors.orders (timestamp)
-  - maicro_monitors.funding_payments (time)
-  - maicro_monitors.ledger_updates (time)
+  - maicro_monitors.account_snapshots (timestamp) [Per Account]
+  - maicro_monitors.positions_snapshots (timestamp) [Per Account]
+  - maicro_monitors.trades (time) [Per Account]
+  - maicro_monitors.orders (timestamp) [Per Account]
+  - maicro_monitors.funding_payments (time) [Per Account]
+  - maicro_monitors.ledger_updates (time) [Per Account]
   - maicro_monitors.candles (ts)
-  - maicro_monitors.tracking_error (date)
+  - maicro_monitors.tracking_error_multilag (timestamp)
+  - binance.* tables
 
 Environment:
   - RESEND_API_KEY   (required to send email)
@@ -40,35 +41,38 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.p
 if REPO_ROOT not in sys.path:
     sys.path.append(REPO_ROOT)
 
-from modules.clickhouse_client import query_df  # type: ignore  # noqa: E402
+from modules.clickhouse_client import query_df
+from config.settings import get_secret, HYPERLIQUID_ADDRESSES
 
-
-RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+RESEND_API_KEY = get_secret("RESEND_API_KEY")
 TO_EMAIL = os.getenv("ALERT_EMAIL", "alanpaulkwan@gmail.com")
 FROM_EMAIL = os.getenv("ALERT_FROM_EMAIL", "Maicro Monitors <alerts@resend.dev>")
 
 
 # (table_name, time_column, threshold_timedelta)
-TABLES: List[Tuple[str, str, timedelta]] = [
-    # Live logs
+GLOBAL_TABLES: List[Tuple[str, str, timedelta]] = [
+    # Live logs (Legacy or Global?)
     ("maicro_logs.live_account", "ts", timedelta(minutes=15)),
     ("maicro_logs.live_positions", "ts", timedelta(minutes=15)),
     ("maicro_logs.positions_jianan_v6", "inserted_at", timedelta(hours=26)),
-    # Monitors
-    ("maicro_monitors.account_snapshots", "timestamp", timedelta(hours=6)),
-    ("maicro_monitors.positions_snapshots", "timestamp", timedelta(hours=6)),
-    ("maicro_monitors.trades", "time", timedelta(hours=6)),
-    ("maicro_monitors.orders", "timestamp", timedelta(hours=6)),
-    ("maicro_monitors.funding_payments", "time", timedelta(hours=12)),
-    ("maicro_monitors.ledger_updates", "time", timedelta(hours=12)),
+    # Global Monitors
     ("maicro_monitors.candles", "ts", timedelta(hours=6)),
-    ("maicro_monitors.tracking_error", "date", timedelta(days=2)),
+    ("maicro_monitors.tracking_error_multilag", "timestamp", timedelta(days=2)),
     # Binance (synced every 6h)
     ("binance.bn_funding_rates", "fundingTime", timedelta(hours=12)),
     ("binance.bn_perp_klines", "timestamp", timedelta(hours=6)),
     ("binance.bn_spot_klines", "timestamp", timedelta(hours=6)),
     ("binance.bn_premium", "timestamp", timedelta(hours=6)),
     ("binance.bn_margin_interest_rates", "timestamp", timedelta(hours=26)),
+]
+
+PER_ACCOUNT_TABLES: List[Tuple[str, str, timedelta]] = [
+    ("maicro_monitors.account_snapshots", "timestamp", timedelta(hours=6)),
+    ("maicro_monitors.positions_snapshots", "timestamp", timedelta(hours=6)),
+    ("maicro_monitors.trades", "time", timedelta(hours=6)),
+    ("maicro_monitors.orders", "timestamp", timedelta(hours=6)),
+    ("maicro_monitors.funding_payments", "time", timedelta(hours=12)),
+    ("maicro_monitors.ledger_updates", "time", timedelta(hours=12)),
 ]
 
 
@@ -122,41 +126,54 @@ def _coerce_time(raw: Any) -> Optional[datetime]:
     return datetime.utcfromtimestamp(val)
 
 
-def collect_staleness() -> List[Dict[str, Any]]:
+def check_table(table: str, time_col: str, threshold: timedelta, address: Optional[str] = None) -> Dict[str, Any]:
     now = datetime.utcnow()
+    row: Dict[str, Any] = {
+        "table": f"{table} ({address[:8]}...)" if address else table,
+        "time_column": time_col,
+        "threshold": threshold,
+        "last_time": None,
+        "age": None,
+        "status": "MISSING",
+        "error": "",
+    }
+    try:
+        if address:
+            sql = f"SELECT max({time_col}) AS last_time FROM {table} WHERE address = '{address}'"
+        else:
+            sql = f"SELECT max({time_col}) AS last_time FROM {table}"
+            
+        df = query_df(sql)
+        if df.empty or "last_time" not in df.columns or pd.isna(df.iloc[0]["last_time"]):
+            row["status"] = "MISSING"
+        else:
+            last_raw = df.iloc[0]["last_time"]
+            last_dt = _coerce_time(last_raw)
+            if last_dt is None:
+                row["status"] = "ERROR"
+                row["error"] = f"Unparseable time: {last_raw!r}"
+            else:
+                age = now - last_dt
+                row["last_time"] = last_dt
+                row["age"] = age
+                row["status"] = "OK" if age <= threshold else "STALE"
+    except Exception as e:
+        row["status"] = "ERROR"
+        row["error"] = str(e)
+    return row
+
+
+def collect_staleness() -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
 
-    for table, time_col, threshold in TABLES:
-        row: Dict[str, Any] = {
-            "table": table,
-            "time_column": time_col,
-            "threshold": threshold,
-            "last_time": None,
-            "age": None,
-            "status": "MISSING",
-            "error": "",
-        }
-        try:
-            sql = f"SELECT max({time_col}) AS last_time FROM {table}"
-            df = query_df(sql)
-            if df.empty or "last_time" not in df.columns or pd.isna(df.iloc[0]["last_time"]):
-                row["status"] = "MISSING"
-            else:
-                last_raw = df.iloc[0]["last_time"]
-                last_dt = _coerce_time(last_raw)
-                if last_dt is None:
-                    row["status"] = "ERROR"
-                    row["error"] = f"Unparseable time: {last_raw!r}"
-                else:
-                    age = now - last_dt
-                    row["last_time"] = last_dt
-                    row["age"] = age
-                    row["status"] = "OK" if age <= threshold else "STALE"
-        except Exception as e:
-            row["status"] = "ERROR"
-            row["error"] = str(e)
+    # Global Tables
+    for table, time_col, threshold in GLOBAL_TABLES:
+        rows.append(check_table(table, time_col, threshold))
 
-        rows.append(row)
+    # Per-Account Tables
+    for table, time_col, threshold in PER_ACCOUNT_TABLES:
+        for address in HYPERLIQUID_ADDRESSES:
+            rows.append(check_table(table, time_col, threshold, address))
 
     return rows
 
@@ -172,7 +189,7 @@ def format_email_text(rows: List[Dict[str, Any]]) -> str:
     lines.append("        MISSING = table empty/no time data; ERROR = query failed or bad time.")
     lines.append("")
 
-    header = f"{'Table':<40} {'Last Time (UTC)':<20} {'Age':<10} {'Threshold':<10} {'Status':<8}"
+    header = f"{'Table':<50} {'Last Time (UTC)':<20} {'Age':<10} {'Threshold':<10} {'Status':<8}"
     lines.append(header)
     lines.append("-" * len(header))
 
@@ -188,7 +205,7 @@ def format_email_text(rows: List[Dict[str, Any]]) -> str:
         thr_str = _format_timedelta(threshold)
 
         lines.append(
-            f"{table:<40} {last_str:<20} {age_str:<10} {thr_str:<10} {status:<8}"
+            f"{table:<50} {last_str:<20} {age_str:<10} {thr_str:<10} {status:<8}"
         )
 
     # Append any errors at the bottom

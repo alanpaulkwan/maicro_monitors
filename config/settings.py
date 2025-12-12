@@ -47,7 +47,24 @@ def get_secret(name: str, default: str = "") -> str:
 # Hyperliquid endpoints
 HYPERLIQUID_INFO_URL = os.getenv("HYPERLIQUID_INFO_URL", "https://api.hyperliquid.xyz/info")
 HYPERLIQUID_WS_URL = os.getenv("HYPERLIQUID_WS_URL", "wss://api.hyperliquid.xyz/ws")
-HYPERLIQUID_ADDRESS = os.getenv("HYPERLIQUID_ADDRESS", "0x17f9d0098111D6Ae0915f980517264F082dB7206")
+
+def _load_tracked_accounts() -> list:
+    """Load tracked accounts from config/tracked_accounts.json"""
+    path = Path(__file__).with_name("tracked_accounts.json")
+    if not path.exists():
+        # Fallback default
+        return ["0x17f9d0098111D6Ae0915f980517264F082dB7206"]
+    try:
+        with path.open("r") as f:
+            data = json.load(f)
+            if isinstance(data, list):
+                return data
+            return []
+    except Exception:
+        return ["0x17f9d0098111D6Ae0915f980517264F082dB7206"]
+
+HYPERLIQUID_ADDRESSES = _load_tracked_accounts()
+HYPERLIQUID_ADDRESS = os.getenv("HYPERLIQUID_ADDRESS", HYPERLIQUID_ADDRESSES[0] if HYPERLIQUID_ADDRESSES else "0x17f9d0098111D6Ae0915f980517264F082dB7206")
 
 # ClickHouse connection (Remote / Cloud)
 # NOTE: passwords are expected to come from environment variables or
