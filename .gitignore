@@ -30,6 +30,7 @@ __pycache__/
 # Datasets or large outputs
 large_files_backup/
 outputs/
+data/
 
 # user config
 .vscode/
