@@ -91,3 +91,34 @@ maicro_monitors.ledger_updates (0x17f9d0...)       1970-01-01 00:00     20433d  
 Sending table-staleness email to alanpaulkwan@gmail.com...
 Email sent successfully.
 [table_staleness_daily] Done.
+[table_staleness_daily] Starting...
+----- EMAIL BODY BEGIN -----
+MAICRO: Table Staleness Summary
+================================
+Reference time (UTC): 2025-12-12 00:05:02
+
+Legend: OK = age <= threshold; STALE = age > threshold;
+        MISSING = table empty/no time data; ERROR = query failed or bad time.
+
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+maicro_logs.live_account                           2025-12-11 00:00     1d         15m        STALE   
+maicro_logs.live_positions                         2025-12-11 00:00     1d         15m        STALE   
+maicro_logs.positions_jianan_v6                    2025-12-11 20:30     3h 34m     1d 2h      OK      
+maicro_monitors.candles                            2025-12-11 14:00     10h 5m     6h         STALE   
+maicro_monitors.tracking_error_multilag            2025-12-12 00:00     5m         2d         OK      
+binance.bn_funding_rates                           2025-12-11 21:00     3h 5m      12h        OK      
+binance.bn_perp_klines                             2025-12-11 21:00     3h 5m      6h         OK      
+binance.bn_spot_klines                             2025-12-11 21:00     3h 5m      6h         OK      
+binance.bn_premium                                 1970-01-01 00:00     20434d     6h         STALE   
+binance.bn_margin_interest_rates                   2025-06-22 22:00     172d 2h    1d 2h      STALE   
+maicro_monitors.account_snapshots (0x17f9d0...)    2025-12-11 21:45     2h 19m     6h         OK      
+maicro_monitors.positions_snapshots (0x17f9d0...)  2025-12-11 21:45     2h 19m     6h         OK      
+maicro_monitors.trades (0x17f9d0...)               2025-12-11 00:01     1d         6h         STALE   
+maicro_monitors.orders (0x17f9d0...)               2025-12-11 00:01     1d         6h         STALE   
+maicro_monitors.funding_payments (0x17f9d0...)     2025-12-08 01:00     3d 23h     12h        STALE   
+maicro_monitors.ledger_updates (0x17f9d0...)       2025-09-08 22:04     94d 2h     12h        STALE   
+----- EMAIL BODY END -----
+Sending table-staleness email to alanpaulkwan@gmail.com...
+Email sent successfully.
+[table_staleness_daily] Done.

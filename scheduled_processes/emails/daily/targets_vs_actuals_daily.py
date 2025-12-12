@@ -58,16 +58,17 @@ def _load_actuals_snapshot(snapshot_date: date, address: str) -> Tuple[pd.DataFr
           AND address = %(addr)s
     )
     SELECT 
-        p.coin as symbol, 
-        p.positionValue, 
-        p.szi,
-        a.accountValue as equity
+        p.coin as symbol,
+        sum(p.positionValue) as positionValue,
+        sum(p.szi) as szi,
+        any(a.accountValue) as equity
     FROM maicro_monitors.positions_snapshots p
     JOIN maicro_monitors.account_snapshots a ON p.timestamp = a.timestamp AND p.address = a.address
     WHERE p.timestamp = (SELECT ts FROM latest_ts)
       AND a.timestamp = (SELECT ts FROM latest_ts)
       AND p.address = %(addr)s
       AND a.address = %(addr)s
+    GROUP BY p.coin
     """
     df = query_df(sql, params={"d": snapshot_date, "addr": address})
     
@@ -109,14 +110,20 @@ def _load_targets(target_date: date) -> pd.DataFrame:
 
 def calculate_te(targets: pd.DataFrame, actuals: pd.DataFrame) -> Tuple[float, pd.DataFrame]:
     """
-    Calculate Tracking Error (Sum of Absolute Differences) and return merged DF.
-    TE = Sum(|Target - Actual|)
+    Calculate Tracking Error (Average Absolute Differences) and return merged DF.
+    TE = mean(|Target - Actual|)
     """
+    # Defensive de-dupe in case upstream data has multiple rows per symbol.
+    if not targets.empty:
+        targets = targets.groupby("symbol", as_index=False)["target_weight"].sum()
+    if not actuals.empty:
+        actuals = actuals.groupby("symbol", as_index=False)["actual_weight"].sum()
+
     merged = pd.merge(targets, actuals, on="symbol", how="outer").fillna(0.0)
     merged["diff"] = merged["actual_weight"] - merged["target_weight"]
     merged["abs_diff"] = merged["diff"].abs()
-    
-    te = merged["abs_diff"].sum()
+
+    te = float(merged["abs_diff"].mean()) if len(merged) else 0.0
     return te, merged
 
 def record_te(date_val: date, lag: int, te: float, target_date: date, address: str):
@@ -204,7 +211,7 @@ def format_email_html(
                     <tr>
                         <th style="padding:4px 8px;">Lag</th>
                         <th style="padding:4px 8px;">Target Date</th>
-                        <th style="padding:4px 8px;">TE (Sum Abs)</th>
+                        <th style="padding:4px 8px;">TE (Avg Abs)</th>
                         <th style="padding:4px 8px;">TE %</th>
                     </tr>
                 </thead>
