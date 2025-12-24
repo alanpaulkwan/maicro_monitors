@@ -458,15 +458,27 @@ def load_model_backtest_data(lookback_days: int = 180):
     returns_t1 = (market_returns * weights.shift(1).fillna(0.0)).sum(axis=1)
     returns_t2 = (market_returns * weights.shift(2).fillna(0.0)).sum(axis=1)
 
-    # Drop initial NaNs created by shifting (if any)
+    # Calculate turnover for transaction cost modeling
+    # Turnover = sum of absolute weight changes / 2 (both buy and sell contribute)
+    weight_changes_t1 = weights.diff().abs()
+    weight_changes_t2 = weights.diff(2).abs()
+
+    turnover_t1 = weight_changes_t1.sum(axis=1) / 2.0
+    turnover_t2 = weight_changes_t2.sum(axis=1) / 2.0
+
+    # Drop initial NaNs created by shifting/diff (if any)
     returns_t1 = returns_t1.dropna()
     returns_t2 = returns_t2.dropna()
+    turnover_t1 = turnover_t1.dropna()
+    turnover_t2 = turnover_t2.dropna()
 
     return {
         "returns_t1": returns_t1,
         "returns_t2": returns_t2,
         "weights": weights,
         "targets": targets,
+        "turnover_t1": turnover_t1,
+        "turnover_t2": turnover_t2,
     }
 
 
@@ -498,6 +510,36 @@ def _compute_return_metrics(daily_returns: pd.Series) -> dict:
         "sharpe": sharpe,
         "n_days": int(len(r)),
     }
+
+
+def _apply_transaction_costs(gross_returns: pd.Series, turnover: pd.Series, cost_bps: float) -> pd.Series:
+    """
+    Apply transaction costs to gross returns.
+
+    Parameters:
+    -----------
+    gross_returns : pd.Series
+        Gross strategy returns before costs
+    turnover : pd.Series
+        Daily turnover (fraction of portfolio traded)
+    cost_bps : float
+        Transaction cost in basis points (e.g., 5.0 for 5 bps = 0.05%)
+
+    Returns:
+    --------
+    pd.Series
+        Net returns after transaction costs
+    """
+    # Convert bps to decimal (5 bps = 0.0005)
+    cost_decimal = cost_bps / 10000.0
+
+    # Transaction cost drag = turnover * cost_per_trade
+    cost_drag = turnover * cost_decimal
+
+    # Net returns = gross returns - costs
+    net_returns = gross_returns - cost_drag
+
+    return net_returns
 
 
 # Staleness thresholds (in minutes)
@@ -761,38 +803,88 @@ def render_backtest():
     ret_t2: pd.Series = data["returns_t2"]
     weights: pd.DataFrame = data["weights"]
     targets: pd.DataFrame = data["targets"]
+    turnover_t1: pd.Series = data.get("turnover_t1", pd.Series(dtype=float))
+    turnover_t2: pd.Series = data.get("turnover_t2", pd.Series(dtype=float))
 
     if show_curves:
         st.markdown("### Equity Curves (Index, base 100)")
+
+        # Transaction cost configuration
+        show_costs = st.checkbox("Show curves with transaction costs", value=False, key="bt_show_costs")
+        if show_costs:
+            st.info("Transaction cost model: 5 bps, 10 bps, 20 bps per trade")
+            cost_bps_list = [5.0, 10.0, 20.0]
+
         if ret_t1.empty and ret_t2.empty:
             st.warning("No backtest data available. Check maicro_logs.positions_jianan_v6 and maicro_monitors.candles.")
         else:
             curves = pd.DataFrame()
+
+            # T-1 curves
             if not ret_t1.empty:
-                curves["T-1 equity"] = (1.0 + ret_t1).cumprod() * 100.0
+                curves["T-1 (Gross)"] = (1.0 + ret_t1).cumprod() * 100.0
+
+                if show_costs and not turnover_t1.empty:
+                    for cost_bps in cost_bps_list:
+                        net_returns = _apply_transaction_costs(ret_t1, turnover_t1, cost_bps)
+                        curves[f"T-1 ({cost_bps:.0f}bps)"] = (1.0 + net_returns).cumprod() * 100.0
+
+            # T-2 curves
             if not ret_t2.empty:
-                curves["T-2 equity"] = (1.0 + ret_t2).cumprod() * 100.0
+                curves["T-2 (Gross)"] = (1.0 + ret_t2).cumprod() * 100.0
+
+                if show_costs and not turnover_t2.empty:
+                    for cost_bps in cost_bps_list:
+                        net_returns = _apply_transaction_costs(ret_t2, turnover_t2, cost_bps)
+                        curves[f"T-2 ({cost_bps:.0f}bps)"] = (1.0 + net_returns).cumprod() * 100.0
 
             st.line_chart(curves, use_container_width=True)
+
+            # Show average turnover
+            if show_costs:
+                st.markdown("**Average Daily Turnover**")
+                col_turn1, col_turn2 = st.columns(2)
+                if not turnover_t1.empty:
+                    with col_turn1:
+                        avg_turnover_t1 = turnover_t1.mean()
+                        st.metric("T-1", f"{avg_turnover_t1:.2%}")
+                if not turnover_t2.empty:
+                    with col_turn2:
+                        avg_turnover_t2 = turnover_t2.mean()
+                        st.metric("T-2", f"{avg_turnover_t2:.2%}")
 
             # Metrics
             st.markdown("### Backtest Statistics")
             col1, col2 = st.columns(2)
+
             if not ret_t1.empty:
                 m1 = _compute_return_metrics(ret_t1)
+                if show_costs and not turnover_t1.empty:
+                    m1_costs = {cost: _compute_return_metrics(_apply_transaction_costs(ret_t1, turnover_t1, cost)) for cost in cost_bps_list}
+
                 with col1:
                     st.markdown("**T-1 (weights lag 1 day)**")
                     st.metric("Sharpe (Ann.)", f"{m1['sharpe']:.2f}" if not np.isnan(m1["sharpe"]) else "N/A")
-                    st.metric("Ann. Return", f"{m1['ann_return']*100:.2f}%" if not np.isnan(m1["ann_return"]) else "N/A")
-                    st.metric("Ann. Vol", f"{m1['ann_vol']*100:.2f}%" if not np.isnan(m1["ann_vol"]) else "N/A")
+                    st.metric("Ann. Return (Gross)", f"{m1['ann_return']*100:.2f}%" if not np.isnan(m1["ann_return"]) else "N/A")
+                    if show_costs and not turnover_t1.empty:
+                        for cost in cost_bps_list:
+                            ann_ret_cost = m1_costs[cost]['ann_return'] * 100
+                            st.metric(f"Ann. Return ({cost:.0f}bps)", f"{ann_ret_cost:.2f}%")
                     st.caption(f"N daily returns: {m1['n_days']}")
+
             if not ret_t2.empty:
                 m2 = _compute_return_metrics(ret_t2)
+                if show_costs and not turnover_t2.empty:
+                    m2_costs = {cost: _compute_return_metrics(_apply_transaction_costs(ret_t2, turnover_t2, cost)) for cost in cost_bps_list}
+
                 with col2:
                     st.markdown("**T-2 (weights lag 2 days)**")
                     st.metric("Sharpe (Ann.)", f"{m2['sharpe']:.2f}" if not np.isnan(m2["sharpe"]) else "N/A")
-                    st.metric("Ann. Return", f"{m2['ann_return']*100:.2f}%" if not np.isnan(m2["ann_return"]) else "N/A")
-                    st.metric("Ann. Vol", f"{m2['ann_vol']*100:.2f}%" if not np.isnan(m2["ann_vol"]) else "N/A")
+                    st.metric("Ann. Return (Gross)", f"{m2['ann_return']*100:.2f}%" if not np.isnan(m2["ann_return"]) else "N/A")
+                    if show_costs and not turnover_t2.empty:
+                        for cost in cost_bps_list:
+                            ann_ret_cost = m2_costs[cost]['ann_return'] * 100
+                            st.metric(f"Ann. Return ({cost:.0f}bps)", f"{ann_ret_cost:.2f}%")
                     st.caption(f"N daily returns: {m2['n_days']}")
 
     if show_positions:
@@ -842,6 +934,154 @@ def render_backtest():
                 )
 
 
+def render_positions_compare():
+    """Render Positions Compare tab: Model vs Actual positions."""
+    st.subheader("Model vs Actual Positions")
+
+    # Date selector
+    selected_date = st.date_input(
+        "Select Date",
+        value=pd.Timestamp.now().normalize().date() - pd.Timedelta(days=1),
+        key="pos_compare_date",
+        help="Select date to compare model positions vs actual positions"
+    )
+
+    # Load model positions (targets) for selected date
+    model_positions = query_df(
+        """
+        SELECT date, symbol, weight, inserted_at
+        FROM (
+            SELECT date, symbol, weight, inserted_at
+            FROM maicro_logs.positions_jianan_v6
+            WHERE date = %(date)s
+              AND weight IS NOT NULL AND isFinite(weight)
+            ORDER BY date, symbol, inserted_at
+            LIMIT 1 BY date, symbol
+        )
+        ORDER BY symbol
+        """,
+        params={"date": selected_date.isoformat()}
+    )
+
+    if model_positions.empty:
+        st.warning(f"No model positions found for {selected_date}. Check maicro_logs.positions_jianan_v6.")
+        return
+
+    model_positions["date"] = pd.to_datetime(model_positions["date"])
+    model_positions["symbol"] = model_positions["symbol"].str.upper().str.strip()
+
+    # Load actual positions for selected date (closest snapshot)
+    actual_positions = query_df(
+        """
+        SELECT coin, szi, entryPx, positionValue, unrealizedPnl, timestamp
+        FROM maicro_monitors.positions_snapshots
+        WHERE toDate(timestamp) = %(date)s
+        ORDER BY timestamp DESC
+        LIMIT 1 BY coin
+        """,
+        params={"date": selected_date.isoformat()}
+    )
+
+    if actual_positions.empty:
+        st.warning(f"No actual positions found for {selected_date}. Check maicro_monitors.positions_snapshots.")
+        return
+
+    actual_positions["coin"] = actual_positions["coin"].str.upper().str.strip()
+
+    # Load account value to calculate weights
+    account_data = query_df(
+        """
+        SELECT accountValue, timestamp
+        FROM maicro_monitors.account_snapshots
+        WHERE toDate(timestamp) = %(date)s
+        ORDER BY timestamp DESC
+        LIMIT 1
+        """,
+        params={"date": selected_date.isoformat()}
+    )
+
+    if account_data.empty or account_data["accountValue"].iloc[0] == 0:
+        st.warning("No account value found. Cannot calculate position weights.")
+        total_account_value = actual_positions["positionValue"].abs().sum()
+        st.info(f"Using gross exposure as account value: ${total_account_value:,.0f}")
+    else:
+        total_account_value = account_data["accountValue"].iloc[0]
+
+    # Calculate actual weights
+    actual_positions["actual_weight"] = actual_positions["positionValue"] / total_account_value
+
+    # Merge model and actual positions
+    comparison = pd.merge(
+        model_positions[["symbol", "weight"]].rename(columns={"symbol": "coin", "weight": "model_weight"}),
+        actual_positions[["coin", "actual_weight", "szi", "positionValue", "unrealizedPnl"]].rename(columns={"szi": "actual_position"}),
+        on="coin",
+        how="outer"
+    )
+
+    # Fill missing values
+    comparison["model_weight"] = comparison["model_weight"].fillna(0.0)
+    comparison["actual_weight"] = comparison["actual_weight"].fillna(0.0)
+    comparison["actual_position"] = comparison["actual_position"].fillna(0.0)
+    comparison["positionValue"] = comparison["positionValue"].fillna(0.0)
+    comparison["unrealizedPnl"] = comparison["unrealizedPnl"].fillna(0.0)
+
+    # Calculate differences
+    comparison["diff_weight"] = comparison["actual_weight"] - comparison["model_weight"]
+    comparison["diff_abs_weight"] = comparison["diff_weight"].abs()
+
+    # Sort by absolute difference
+    comparison.sort_values("diff_abs_weight", ascending=False, inplace=True)
+
+    # Show summary metrics
+    st.markdown("### Summary")
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        tracking_error = comparison["diff_abs_weight"].sum() / 2.0
+        st.metric("Tracking Error (1-norm)", f"{tracking_error:.2%}")
+
+    with col2:
+        model_gross = comparison["model_weight"].abs().sum()
+        st.metric("Model Gross Exposure", f"{model_gross:.2%}")
+
+    with col3:
+        actual_gross = comparison["actual_weight"].abs().sum()
+        st.metric("Actual Gross Exposure", f"{actual_gross:.2%}")
+
+    with col4:
+        n_positions = len(comparison[comparison["actual_weight"] != 0])
+        st.metric("Active Positions", f"{n_positions}")
+
+    # Show comparison table
+    st.markdown("### Position Comparison (sorted by absolute difference)")
+
+    display_cols = ["coin", "model_weight", "actual_weight", "diff_weight", "positionValue", "unrealizedPnl"]
+
+    # Format for display
+    display_df = comparison[display_cols].copy()
+    display_df["model_weight"] = display_df["model_weight"].apply(lambda x: f"{x:.2%}")
+    display_df["actual_weight"] = display_df["actual_weight"].apply(lambda x: f"{x:.2%}")
+    display_df["diff_weight"] = display_df["diff_weight"].apply(lambda x: f"{x:.2%}")
+    display_df["positionValue"] = display_df["positionValue"].apply(lambda x: f"${x:,.0f}")
+    display_df["unrealizedPnl"] = display_df["unrealizedPnl"].apply(lambda x: f"${x:,.0f}")
+
+    st.dataframe(display_df, use_container_width=True)
+
+    # Show only differences
+    with st.expander("View positions with differences > 0.5%"):
+        diff_filter = comparison[comparison["diff_abs_weight"] > 0.005]
+        if not diff_filter.empty:
+            display_df_diff = diff_filter[display_cols].copy()
+            display_df_diff["model_weight"] = display_df_diff["model_weight"].apply(lambda x: f"{x:.2%}")
+            display_df_diff["actual_weight"] = display_df_diff["actual_weight"].apply(lambda x: f"{x:.2%}")
+            display_df_diff["diff_weight"] = display_df_diff["diff_weight"].apply(lambda x: f"{x:.2%}")
+            display_df_diff["positionValue"] = display_df_diff["positionValue"].apply(lambda x: f"${x:,.0f}")
+            display_df_diff["unrealizedPnl"] = display_df_diff["unrealizedPnl"].apply(lambda x: f"${x:,.0f}")
+            st.dataframe(display_df_diff, use_container_width=True)
+        else:
+            st.info("All positions are within 0.5% of target")
+
+
 def render_positions():
     """Render Positions tab per plan."""
     st.subheader("Current Positions")
@@ -875,7 +1115,11 @@ def render_positions():
     # Top positions by absolute value
     if len(df) > 5:
         st.subheader("Top 5 Positions (by |Value|)")
-        top5 = df.nlargest(5, df['positionValue'].abs() if 'positionValue' in df.columns else 'qty')
+        column_to_sort = 'positionValue' if 'positionValue' in df.columns else 'qty'
+        # Create a temporary column with absolute values for sorting
+        df['abs_value'] = df[column_to_sort].abs()
+        top5 = df.nlargest(5, 'abs_value')
+        df.drop(columns=['abs_value'], inplace=True)  # Clean up temporary column
         st.bar_chart(top5.set_index('coin')['positionValue'], use_container_width=True)
 
 
@@ -1026,13 +1270,14 @@ def render_system_health():
 
 
 # Layout - tabs aligned with plan_dashboard.md
-overview_tab, pnl_tab, backtest_tab, te_tab, positions_tab, trades_tab, health_tab = st.tabs(
+overview_tab, pnl_tab, backtest_tab, te_tab, positions_tab, pos_compare_tab, trades_tab, health_tab = st.tabs(
     [
         "📊 Overview",
         "💰 PnL/Equity",
         "📈 Backtest",
         "📏 Tracking Error",
         "📦 Positions",
+        "📊 Positions Compare",
         "🔄 Trades",
         "🏥 System Health",
     ]
@@ -1048,6 +1293,8 @@ with te_tab:
     render_tracking_error()
 with positions_tab:
     render_positions()
+with pos_compare_tab:
+    render_positions_compare()
 with trades_tab:
     render_trades_tab()
 with health_tab:

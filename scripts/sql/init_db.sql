@@ -119,6 +119,22 @@ CREATE TABLE IF NOT EXISTS maicro_monitors.tracking_error_multilag (
 ) ENGINE = ReplacingMergeTree(timestamp)
 ORDER BY (date, strategy_id, lag);
 
+-- Positions Comparison: Model vs Actual
+CREATE TABLE IF NOT EXISTS maicro_monitors.positions_comparison (
+    date Date,
+    coin String,
+    model_weight Float64,      -- Target weight from model
+    model_position Float64,     -- Target position size (units)
+    actual_weight Float64,      -- Actual weight achieved
+    actual_position Float64,    -- Actual position size (units)
+    diff_weight Float64,        -- Difference (actual - model)
+    diff_position Float64,      -- Difference in position size
+    model_timestamp DateTime64(3),
+    actual_timestamp DateTime64(3),
+    timestamp DateTime DEFAULT now()
+) ENGINE = MergeTree()
+ORDER BY (date, coin);
+
 -- Schema for hl_meta table
 -- This table stores Hyperliquid instrument metadata including precision information
 

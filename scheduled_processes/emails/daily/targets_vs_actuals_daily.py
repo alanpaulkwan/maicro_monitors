@@ -36,13 +36,18 @@ STRATEGY_ID = "jianan_v6"
 
 def _normalize_weights(df: pd.DataFrame, weight_col: str = "weight") -> pd.Series:
     """
-    Standard normalization: assume raw weights are correct target allocations.
-    If they are not (e.g. they sum to > 100 or are raw scores), this needs adjustment.
-    For now, we trust the model output 'weight'.
+    Normalize weights so that the sum of absolute weights is 1.0.
+
+    This makes both targets and actuals comparable as portfolio weights even
+    when leverage or long/short exposure would otherwise sum to >100%.
     """
     if df.empty or weight_col not in df.columns:
         return pd.Series(index=df.index, dtype=float)
-    return df[weight_col].astype(float).fillna(0.0)
+    w = df[weight_col].astype(float).fillna(0.0)
+    denom = w.abs().sum()
+    if denom <= 0:
+        return w * 0.0
+    return w / denom
 
 def _load_actuals_snapshot(snapshot_date: date, address: str) -> Tuple[pd.DataFrame, float]:
     """
@@ -80,7 +85,9 @@ def _load_actuals_snapshot(snapshot_date: date, address: str) -> Tuple[pd.DataFr
         return pd.DataFrame(), 0.0
 
     df["symbol"] = df["symbol"].str.upper().str.strip()
-    df["actual_weight"] = df["positionValue"] / equity
+    # Use signed notional so that shorts are negative weights.
+    signed_position_value = df["positionValue"] * np.sign(df["szi"])
+    df["actual_weight"] = signed_position_value / equity
     
     return df[["symbol", "actual_weight", "szi", "positionValue"]], equity
 
@@ -113,11 +120,14 @@ def calculate_te(targets: pd.DataFrame, actuals: pd.DataFrame) -> Tuple[float, p
     Calculate Tracking Error (Average Absolute Differences) and return merged DF.
     TE = mean(|Target - Actual|)
     """
-    # Defensive de-dupe in case upstream data has multiple rows per symbol.
+    # Defensive de-dupe in case upstream data has multiple rows per symbol,
+    # then normalize both sides so they live in the same weight space.
     if not targets.empty:
         targets = targets.groupby("symbol", as_index=False)["target_weight"].sum()
+        targets["target_weight"] = _normalize_weights(targets, "target_weight")
     if not actuals.empty:
         actuals = actuals.groupby("symbol", as_index=False)["actual_weight"].sum()
+        actuals["actual_weight"] = _normalize_weights(actuals, "actual_weight")
 
     merged = pd.merge(targets, actuals, on="symbol", how="outer").fillna(0.0)
     merged["diff"] = merged["actual_weight"] - merged["target_weight"]

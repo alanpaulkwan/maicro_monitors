@@ -72,10 +72,11 @@ Two separate daily operational emails:
    table name, last timestamp, age (e.g. "7m ago"), and status (OK / stale).
 
 **Cadence (once per day, 08:00 UTC):**
-
 ```cron
 0 8 * * * cd $REPO_ROOT && /usr/bin/python3 scheduled_processes/emails/daily/targets_vs_actuals_daily.py >> logs/email_targets_vs_actuals.log 2>&1
 5 8 * * * cd $REPO_ROOT && /usr/bin/python3 scheduled_processes/emails/daily/table_staleness_daily.py >> logs/email_table_staleness.log 2>&1
+10 8 * * * cd $REPO_ROOT && /usr/bin/python3 scheduled_processes/emails/daily/trades_last24h_daily.py >> logs/email_trades_last24h.log 2>&1
+15 8 * * * cd $REPO_ROOT && /usr/bin/python3 scheduled_processes/emails/daily/tracking_error_last3d_daily.py >> logs/email_tracking_error_last3d.log 2>&1
 ```
 
 > Legacy: `reports/daily_summary_email.py` is still available as a

@@ -122,3 +122,479 @@ maicro_monitors.ledger_updates (0x17f9d0...)       2025-09-08 22:04     94d 2h  
 Sending table-staleness email to alanpaulkwan@gmail.com...
 Email sent successfully.
 [table_staleness_daily] Done.
+[table_staleness_daily] Starting...
+----- EMAIL BODY BEGIN -----
+MAICRO: Table Staleness Summary
+================================
+Reference time (UTC): 2025-12-13 00:05:02
+
+Legend: OK = age <= threshold; STALE = age > threshold;
+        MISSING = table empty/no time data; ERROR = query failed or bad time.
+
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+maicro_logs.live_account                           2025-12-12 00:00     1d         15m        STALE   
+maicro_logs.live_positions                         2025-12-12 00:00     1d         15m        STALE   
+maicro_logs.positions_jianan_v6                    2025-12-12 21:42     2h 22m     1d 2h      OK      
+maicro_monitors.candles                            2025-12-12 14:00     10h 5m     6h         STALE   
+maicro_monitors.tracking_error_multilag            2025-12-13 00:00     5m         2d         OK      
+binance.bn_funding_rates                           2025-12-12 21:00     3h 5m      12h        OK      
+binance.bn_perp_klines                             2025-12-12 21:00     3h 5m      6h         OK      
+binance.bn_spot_klines                             2025-12-12 21:00     3h 5m      6h         OK      
+binance.bn_premium                                 1970-01-01 00:00     20435d     6h         STALE   
+binance.bn_margin_interest_rates                   2025-06-22 22:00     173d 2h    1d 2h      STALE   
+maicro_monitors.account_snapshots (0x17f9d0...)    2025-12-12 21:45     2h 19m     6h         OK      
+maicro_monitors.positions_snapshots (0x17f9d0...)  2025-12-12 21:45     2h 19m     6h         OK      
+maicro_monitors.trades (0x17f9d0...)               2025-12-12 00:01     1d         6h         STALE   
+maicro_monitors.orders (0x17f9d0...)               2025-12-12 00:01     1d         6h         STALE   
+maicro_monitors.funding_payments (0x17f9d0...)     2025-12-08 01:00     4d 23h     12h        STALE   
+maicro_monitors.ledger_updates (0x17f9d0...)       2025-09-08 22:04     95d 2h     12h        STALE   
+----- EMAIL BODY END -----
+Sending table-staleness email to alanpaulkwan@gmail.com...
+Email sent successfully.
+[table_staleness_daily] Done.
+[table_staleness_daily] Starting...
+----- EMAIL BODY BEGIN -----
+MAICRO: Table Staleness Summary
+================================
+Reference time (UTC): 2025-12-14 00:05:02
+
+Legend: OK = age <= threshold; STALE = age > threshold;
+        MISSING = table empty/no time data; ERROR = query failed or bad time.
+
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+maicro_logs.live_account                           2025-12-13 00:00     1d         15m        STALE   
+maicro_logs.live_positions                         2025-12-13 00:00     1d         15m        STALE   
+maicro_logs.positions_jianan_v6                    2025-12-13 20:07     3h 57m     1d 2h      OK      
+maicro_monitors.candles                            2025-12-13 14:00     10h 5m     6h         STALE   
+maicro_monitors.tracking_error_multilag            2025-12-14 00:00     5m         2d         OK      
+binance.bn_funding_rates                           2025-12-13 21:00     3h 5m      12h        OK      
+binance.bn_perp_klines                             2025-12-13 21:00     3h 5m      6h         OK      
+binance.bn_spot_klines                             2025-12-13 21:00     3h 5m      6h         OK      
+binance.bn_premium                                 1970-01-01 00:00     20436d     6h         STALE   
+binance.bn_margin_interest_rates                   2025-06-22 22:00     174d 2h    1d 2h      STALE   
+maicro_monitors.account_snapshots (0x17f9d0...)    2025-12-13 21:45     2h 19m     6h         OK      
+maicro_monitors.positions_snapshots (0x17f9d0...)  2025-12-13 21:45     2h 19m     6h         OK      
+maicro_monitors.trades (0x17f9d0...)               2025-12-13 00:01     1d         6h         STALE   
+maicro_monitors.orders (0x17f9d0...)               2025-12-13 00:01     1d         6h         STALE   
+maicro_monitors.funding_payments (0x17f9d0...)     2025-12-08 01:00     5d 23h     12h        STALE   
+maicro_monitors.ledger_updates (0x17f9d0...)       2025-09-08 22:04     96d 2h     12h        STALE   
+----- EMAIL BODY END -----
+Sending table-staleness email to alanpaulkwan@gmail.com...
+Email sent successfully.
+[table_staleness_daily] Done.
+[table_staleness_daily] Starting...
+----- EMAIL BODY BEGIN -----
+MAICRO: Table Staleness Summary
+================================
+Reference time (UTC): 2025-12-15 00:05:01
+
+Legend: OK = age <= threshold; STALE = age > threshold;
+        MISSING = table empty/no time data; ERROR = query failed or bad time.
+
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+maicro_logs.live_account                           2025-12-14 00:00     1d         15m        STALE   
+maicro_logs.live_positions                         2025-12-14 00:00     1d         15m        STALE   
+maicro_logs.positions_jianan_v6                    2025-12-14 21:17     2h 47m     1d 2h      OK      
+maicro_monitors.candles                            2025-12-14 14:00     10h 5m     6h         STALE   
+maicro_monitors.tracking_error_multilag            2025-12-15 00:00     4m         2d         OK      
+binance.bn_funding_rates                           2025-12-14 21:00     3h 5m      12h        OK      
+binance.bn_perp_klines                             2025-12-14 21:00     3h 5m      6h         OK      
+binance.bn_spot_klines                             2025-12-14 21:00     3h 5m      6h         OK      
+binance.bn_premium                                 1970-01-01 00:00     20437d     6h         STALE   
+binance.bn_margin_interest_rates                   2025-06-22 22:00     175d 2h    1d 2h      STALE   
+maicro_monitors.account_snapshots (0x17f9d0...)    2025-12-14 21:45     2h 19m     6h         OK      
+maicro_monitors.positions_snapshots (0x17f9d0...)  2025-12-14 21:45     2h 19m     6h         OK      
+maicro_monitors.trades (0x17f9d0...)               2025-12-14 00:01     1d         6h         STALE   
+maicro_monitors.orders (0x17f9d0...)               2025-12-14 00:01     1d         6h         STALE   
+maicro_monitors.funding_payments (0x17f9d0...)     2025-12-08 01:00     6d 23h     12h        STALE   
+maicro_monitors.ledger_updates (0x17f9d0...)       2025-09-08 22:04     97d 2h     12h        STALE   
+----- EMAIL BODY END -----
+Sending table-staleness email to alanpaulkwan@gmail.com...
+Email sent successfully.
+[table_staleness_daily] Done.
+[table_staleness_daily] Starting...
+----- EMAIL BODY BEGIN -----
+MAICRO: Table Staleness Summary
+================================
+Reference time (UTC): 2025-12-16 00:05:02
+
+Legend: OK = age <= threshold; STALE = age > threshold;
+        MISSING = table empty/no time data; ERROR = query failed or bad time.
+
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+maicro_logs.live_account                           2025-12-15 00:00     1d         15m        STALE   
+maicro_logs.live_positions                         2025-12-15 00:00     1d         15m        STALE   
+maicro_logs.positions_jianan_v6                    2025-12-15 19:45     4h 19m     1d 2h      OK      
+maicro_monitors.candles                            2025-12-15 14:00     10h 5m     6h         STALE   
+maicro_monitors.tracking_error_multilag            2025-12-16 00:00     5m         2d         OK      
+binance.bn_funding_rates                           2025-12-15 21:00     3h 5m      12h        OK      
+binance.bn_perp_klines                             2025-12-15 21:00     3h 5m      6h         OK      
+binance.bn_spot_klines                             2025-12-15 21:00     3h 5m      6h         OK      
+binance.bn_premium                                 1970-01-01 00:00     20438d     6h         STALE   
+binance.bn_margin_interest_rates                   2025-06-22 22:00     176d 2h    1d 2h      STALE   
+maicro_monitors.account_snapshots (0x17f9d0...)    2025-12-15 21:45     2h 19m     6h         OK      
+maicro_monitors.positions_snapshots (0x17f9d0...)  2025-12-15 21:45     2h 19m     6h         OK      
+maicro_monitors.trades (0x17f9d0...)               2025-12-15 00:02     1d         6h         STALE   
+maicro_monitors.orders (0x17f9d0...)               2025-12-15 00:02     1d         6h         STALE   
+maicro_monitors.funding_payments (0x17f9d0...)     2025-12-08 09:00     7d 15h     12h        STALE   
+maicro_monitors.ledger_updates (0x17f9d0...)       2025-09-08 22:04     98d 2h     12h        STALE   
+----- EMAIL BODY END -----
+Sending table-staleness email to alanpaulkwan@gmail.com...
+Email sent successfully.
+[table_staleness_daily] Done.
+[table_staleness_daily] Starting...
+----- EMAIL BODY BEGIN -----
+MAICRO: Table Staleness Summary
+================================
+Reference time (UTC): 2025-12-17 00:05:02
+
+Legend: OK = age <= threshold; STALE = age > threshold;
+        MISSING = table empty/no time data; ERROR = query failed or bad time.
+
+maicro_logs
+-----------
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+maicro_logs.live_account                           2025-12-16 00:00     1d         15m        STALE   
+maicro_logs.live_positions                         2025-12-16 00:00     1d         15m        STALE   
+maicro_logs.positions_jianan_v6                    2025-12-16 21:01     3h 3m      1d 2h      OK      
+
+maicro_monitors
+---------------
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+maicro_monitors.candles                            2025-12-16 14:00     10h 5m     6h         STALE   
+maicro_monitors.tracking_error_multilag            2025-12-17 00:00     5m         2d         OK      
+maicro_monitors.account_snapshots (0x17f9d0...)    2025-12-16 21:45     2h 19m     6h         OK      
+maicro_monitors.positions_snapshots (0x17f9d0...)  2025-12-16 21:45     2h 19m     6h         OK      
+maicro_monitors.trades (0x17f9d0...)               2025-12-16 00:02     1d         6h         STALE   
+maicro_monitors.orders (0x17f9d0...)               2025-12-16 00:02     1d         6h         STALE   
+maicro_monitors.funding_payments (0x17f9d0...)     2025-12-08 09:00     8d 15h     12h        STALE   
+maicro_monitors.ledger_updates (0x17f9d0...)       2025-09-08 22:04     99d 2h     12h        STALE   
+
+binance
+-------
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+binance.bn_funding_rates                           2025-12-16 14:00     10h 5m     12h        OK      
+binance.bn_perp_klines                             2025-12-16 14:00     10h 5m     6h         STALE   
+binance.bn_spot_klines                             2025-12-16 14:00     10h 5m     6h         STALE   
+binance.bn_premium                                 1970-01-01 00:00     20439d     6h         STALE   
+binance.bn_margin_interest_rates                   2025-06-22 22:00     177d 2h    1d 2h      STALE   
+
+----- EMAIL BODY END -----
+Sending table-staleness email to alanpaulkwan@gmail.com...
+Email sent successfully.
+[table_staleness_daily] Done.
+[table_staleness_daily] Starting...
+----- EMAIL BODY BEGIN -----
+MAICRO: Table Staleness Summary
+================================
+Reference time (UTC): 2025-12-18 00:05:02
+
+Legend: OK = age <= threshold; STALE = age > threshold;
+        MISSING = table empty/no time data; ERROR = query failed or bad time.
+
+maicro_logs
+-----------
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+maicro_logs.live_account                           2025-12-17 00:00     1d         15m        STALE   
+maicro_logs.live_positions                         2025-12-17 00:00     1d         15m        STALE   
+maicro_logs.positions_jianan_v6                    2025-12-17 19:28     4h 36m     1d 2h      OK      
+
+maicro_monitors
+---------------
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+maicro_monitors.candles                            2025-12-17 14:00     10h 5m     6h         STALE   
+maicro_monitors.tracking_error_multilag            2025-12-18 00:00     5m         2d         OK      
+maicro_monitors.account_snapshots (0x17f9d0...)    2025-12-17 21:45     2h 19m     6h         OK      
+maicro_monitors.positions_snapshots (0x17f9d0...)  2025-12-17 21:45     2h 19m     6h         OK      
+maicro_monitors.trades (0x17f9d0...)               2025-12-17 00:02     1d         6h         STALE   
+maicro_monitors.orders (0x17f9d0...)               2025-12-17 00:02     1d         6h         STALE   
+maicro_monitors.funding_payments (0x17f9d0...)     2025-12-10 08:00     7d 16h     12h        STALE   
+maicro_monitors.ledger_updates (0x17f9d0...)       2025-09-08 22:04     100d 2h    12h        STALE   
+
+binance
+-------
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+binance.bn_funding_rates                           2025-12-16 14:00     1d 10h     12h        STALE   
+binance.bn_perp_klines                             2025-12-16 14:00     1d 10h     6h         STALE   
+binance.bn_spot_klines                             2025-12-16 14:00     1d 10h     6h         STALE   
+binance.bn_premium                                 1970-01-01 00:00     20440d     6h         STALE   
+binance.bn_margin_interest_rates                   2025-06-22 22:00     178d 2h    1d 2h      STALE   
+
+----- EMAIL BODY END -----
+Sending table-staleness email to alanpaulkwan@gmail.com...
+Email sent successfully.
+[table_staleness_daily] Done.
+[table_staleness_daily] Starting...
+----- EMAIL BODY BEGIN -----
+MAICRO: Table Staleness Summary
+================================
+Reference time (UTC): 2025-12-19 00:05:02
+
+Legend: OK = age <= threshold; STALE = age > threshold;
+        MISSING = table empty/no time data; ERROR = query failed or bad time.
+
+maicro_logs
+-----------
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+maicro_logs.live_account                           2025-12-18 00:00     1d         15m        STALE   
+maicro_logs.live_positions                         2025-12-18 00:00     1d         15m        STALE   
+maicro_logs.positions_jianan_v6                    2025-12-18 20:42     3h 22m     1d 2h      OK      
+
+maicro_monitors
+---------------
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+maicro_monitors.candles                            2025-12-18 14:00     10h 5m     6h         STALE   
+maicro_monitors.tracking_error_multilag            2025-12-19 00:00     5m         2d         OK      
+maicro_monitors.account_snapshots (0x17f9d0...)    2025-12-18 21:45     2h 19m     6h         OK      
+maicro_monitors.positions_snapshots (0x17f9d0...)  2025-12-18 21:45     2h 19m     6h         OK      
+maicro_monitors.trades (0x17f9d0...)               2025-12-18 00:01     1d         6h         STALE   
+maicro_monitors.orders (0x17f9d0...)               2025-12-18 00:01     1d         6h         STALE   
+maicro_monitors.funding_payments (0x17f9d0...)     2025-12-10 08:00     8d 16h     12h        STALE   
+maicro_monitors.ledger_updates (0x17f9d0...)       2025-09-08 22:04     101d 2h    12h        STALE   
+
+binance
+-------
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+binance.bn_funding_rates                           2025-12-18 21:00     3h 5m      12h        OK      
+binance.bn_perp_klines                             2025-12-18 21:00     3h 5m      6h         OK      
+binance.bn_spot_klines                             2025-12-18 21:00     3h 5m      6h         OK      
+binance.bn_premium                                 1970-01-01 00:00     20441d     6h         STALE   
+binance.bn_margin_interest_rates                   2025-06-22 22:00     179d 2h    1d 2h      STALE   
+
+----- EMAIL BODY END -----
+Sending table-staleness email to alanpaulkwan@gmail.com...
+Email sent successfully.
+[table_staleness_daily] Done.
+[table_staleness_daily] Starting...
+----- EMAIL BODY BEGIN -----
+MAICRO: Table Staleness Summary
+================================
+Reference time (UTC): 2025-12-20 00:05:01
+
+Legend: OK = age <= threshold; STALE = age > threshold;
+        MISSING = table empty/no time data; ERROR = query failed or bad time.
+
+maicro_logs
+-----------
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+maicro_logs.live_account                           2025-12-19 00:00     1d         15m        STALE   
+maicro_logs.live_positions                         2025-12-19 00:00     1d         15m        STALE   
+maicro_logs.positions_jianan_v6                    2025-12-19 21:50     2h 14m     1d 2h      OK      
+
+maicro_monitors
+---------------
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+maicro_monitors.candles                            2025-12-19 14:00     10h 5m     6h         STALE   
+maicro_monitors.tracking_error_multilag            2025-12-20 00:00     4m         2d         OK      
+maicro_monitors.account_snapshots (0x17f9d0...)    2025-12-19 21:45     2h 19m     6h         OK      
+maicro_monitors.positions_snapshots (0x17f9d0...)  2025-12-19 21:45     2h 19m     6h         OK      
+maicro_monitors.trades (0x17f9d0...)               2025-12-19 00:01     1d         6h         STALE   
+maicro_monitors.orders (0x17f9d0...)               2025-12-19 00:01     1d         6h         STALE   
+maicro_monitors.funding_payments (0x17f9d0...)     2025-12-12 06:00     7d 18h     12h        STALE   
+maicro_monitors.ledger_updates (0x17f9d0...)       2025-09-08 22:04     102d 2h    12h        STALE   
+
+binance
+-------
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+binance.bn_funding_rates                           2025-12-19 20:00     4h 5m      12h        OK      
+binance.bn_perp_klines                             2025-12-19 20:00     4h 5m      6h         OK      
+binance.bn_spot_klines                             2025-12-19 20:00     4h 5m      6h         OK      
+binance.bn_premium                                 1970-01-01 00:00     20442d     6h         STALE   
+binance.bn_margin_interest_rates                   2025-06-22 22:00     180d 2h    1d 2h      STALE   
+
+----- EMAIL BODY END -----
+Sending table-staleness email to alanpaulkwan@gmail.com...
+Email sent successfully.
+[table_staleness_daily] Done.
+[table_staleness_daily] Starting...
+----- EMAIL BODY BEGIN -----
+MAICRO: Table Staleness Summary
+================================
+Reference time (UTC): 2025-12-21 00:05:02
+
+Legend: OK = age <= threshold; STALE = age > threshold;
+        MISSING = table empty/no time data; ERROR = query failed or bad time.
+
+maicro_logs
+-----------
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+maicro_logs.live_account                           2025-12-20 00:00     1d         15m        STALE   
+maicro_logs.live_positions                         2025-12-20 00:00     1d         15m        STALE   
+maicro_logs.positions_jianan_v6                    2025-12-20 20:15     3h 49m     1d 2h      OK      
+
+maicro_monitors
+---------------
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+maicro_monitors.candles                            2025-12-20 14:00     10h 5m     6h         STALE   
+maicro_monitors.tracking_error_multilag            2025-12-21 00:00     5m         2d         OK      
+maicro_monitors.account_snapshots (0x17f9d0...)    2025-12-20 21:45     2h 19m     6h         OK      
+maicro_monitors.positions_snapshots (0x17f9d0...)  2025-12-20 21:45     2h 19m     6h         OK      
+maicro_monitors.trades (0x17f9d0...)               2025-12-20 00:01     1d         6h         STALE   
+maicro_monitors.orders (0x17f9d0...)               2025-12-20 00:01     1d         6h         STALE   
+maicro_monitors.funding_payments (0x17f9d0...)     2025-12-12 06:00     8d 18h     12h        STALE   
+maicro_monitors.ledger_updates (0x17f9d0...)       2025-09-08 22:04     103d 2h    12h        STALE   
+
+binance
+-------
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+binance.bn_funding_rates                           2025-12-20 20:00     4h 5m      12h        OK      
+binance.bn_perp_klines                             2025-12-20 20:00     4h 5m      6h         OK      
+binance.bn_spot_klines                             2025-12-20 20:00     4h 5m      6h         OK      
+binance.bn_premium                                 1970-01-01 00:00     20443d     6h         STALE   
+binance.bn_margin_interest_rates                   2025-06-22 22:00     181d 2h    1d 2h      STALE   
+
+----- EMAIL BODY END -----
+Sending table-staleness email to alanpaulkwan@gmail.com...
+Email sent successfully.
+[table_staleness_daily] Done.
+[table_staleness_daily] Starting...
+----- EMAIL BODY BEGIN -----
+MAICRO: Table Staleness Summary
+================================
+Reference time (UTC): 2025-12-22 00:05:02
+
+Legend: OK = age <= threshold; STALE = age > threshold;
+        MISSING = table empty/no time data; ERROR = query failed or bad time.
+
+maicro_logs
+-----------
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+maicro_logs.live_account                           2025-12-21 00:00     1d         15m        STALE   
+maicro_logs.live_positions                         2025-12-21 00:00     1d         15m        STALE   
+maicro_logs.positions_jianan_v6                    2025-12-21 21:32     2h 32m     1d 2h      OK      
+
+maicro_monitors
+---------------
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+maicro_monitors.candles                            2025-12-21 14:00     10h 5m     6h         STALE   
+maicro_monitors.tracking_error_multilag            2025-12-22 00:00     5m         2d         OK      
+maicro_monitors.account_snapshots (0x17f9d0...)    2025-12-21 21:45     2h 19m     6h         OK      
+maicro_monitors.positions_snapshots (0x17f9d0...)  2025-12-21 21:45     2h 19m     6h         OK      
+maicro_monitors.trades (0x17f9d0...)               2025-12-21 00:01     1d         6h         STALE   
+maicro_monitors.orders (0x17f9d0...)               2025-12-21 00:01     1d         6h         STALE   
+maicro_monitors.funding_payments (0x17f9d0...)     2025-12-14 03:00     7d 21h     12h        STALE   
+maicro_monitors.ledger_updates (0x17f9d0...)       2025-09-08 22:04     104d 2h    12h        STALE   
+
+binance
+-------
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+binance.bn_funding_rates                           2025-12-21 21:00     3h 5m      12h        OK      
+binance.bn_perp_klines                             2025-12-21 21:00     3h 5m      6h         OK      
+binance.bn_spot_klines                             2025-12-21 21:00     3h 5m      6h         OK      
+binance.bn_premium                                 1970-01-01 00:00     20444d     6h         STALE   
+binance.bn_margin_interest_rates                   2025-06-22 22:00     182d 2h    1d 2h      STALE   
+
+----- EMAIL BODY END -----
+Sending table-staleness email to alanpaulkwan@gmail.com...
+Email sent successfully.
+[table_staleness_daily] Done.
+[table_staleness_daily] Starting...
+----- EMAIL BODY BEGIN -----
+MAICRO: Table Staleness Summary
+================================
+Reference time (UTC): 2025-12-23 00:05:01
+
+Legend: OK = age <= threshold; STALE = age > threshold;
+        MISSING = table empty/no time data; ERROR = query failed or bad time.
+
+maicro_logs
+-----------
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+maicro_logs.live_account                           2025-12-22 00:00     1d         15m        STALE   
+maicro_logs.live_positions                         2025-12-22 00:00     1d         15m        STALE   
+maicro_logs.positions_jianan_v6                    2025-12-22 19:52     4h 12m     1d 2h      OK      
+
+maicro_monitors
+---------------
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+maicro_monitors.candles                            2025-12-22 14:00     10h 5m     6h         STALE   
+maicro_monitors.tracking_error_multilag            2025-12-23 00:00     5m         2d         OK      
+maicro_monitors.account_snapshots (0x17f9d0...)    2025-12-22 21:45     2h 19m     6h         OK      
+maicro_monitors.positions_snapshots (0x17f9d0...)  2025-12-22 21:45     2h 19m     6h         OK      
+maicro_monitors.trades (0x17f9d0...)               2025-12-22 00:02     1d         6h         STALE   
+maicro_monitors.orders (0x17f9d0...)               2025-12-22 00:02     1d         6h         STALE   
+maicro_monitors.funding_payments (0x17f9d0...)     2025-12-14 03:00     8d 21h     12h        STALE   
+maicro_monitors.ledger_updates (0x17f9d0...)       2025-09-08 22:04     105d 2h    12h        STALE   
+
+binance
+-------
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+binance.bn_funding_rates                           2025-12-22 12:00     12h 5m     12h        STALE   
+binance.bn_perp_klines                             2025-12-22 12:00     12h 5m     6h         STALE   
+binance.bn_spot_klines                             2025-12-22 12:00     12h 5m     6h         STALE   
+binance.bn_premium                                 1970-01-01 00:00     20445d     6h         STALE   
+binance.bn_margin_interest_rates                   2025-06-22 22:00     183d 2h    1d 2h      STALE   
+
+----- EMAIL BODY END -----
+Sending table-staleness email to alanpaulkwan@gmail.com...
+Email sent successfully.
+[table_staleness_daily] Done.
+[table_staleness_daily] Starting...
+----- EMAIL BODY BEGIN -----
+MAICRO: Table Staleness Summary
+================================
+Reference time (UTC): 2025-12-24 00:05:02
+
+Legend: OK = age <= threshold; STALE = age > threshold;
+        MISSING = table empty/no time data; ERROR = query failed or bad time.
+
+maicro_logs
+-----------
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+maicro_logs.live_account                           2025-12-23 00:00     1d         15m        STALE   
+maicro_logs.live_positions                         2025-12-23 00:00     1d         15m        STALE   
+maicro_logs.positions_jianan_v6                    2025-12-23 20:57     3h 7m      1d 2h      OK      
+
+maicro_monitors
+---------------
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+maicro_monitors.candles                            2025-12-23 14:00     10h 5m     6h         STALE   
+maicro_monitors.tracking_error_multilag            2025-12-24 00:00     5m         2d         OK      
+maicro_monitors.account_snapshots (0x17f9d0...)    2025-12-23 21:45     2h 19m     6h         OK      
+maicro_monitors.positions_snapshots (0x17f9d0...)  2025-12-23 21:45     2h 19m     6h         OK      
+maicro_monitors.trades (0x17f9d0...)               2025-12-23 00:02     1d         6h         STALE   
+maicro_monitors.orders (0x17f9d0...)               2025-12-23 00:02     1d         6h         STALE   
+maicro_monitors.funding_payments (0x17f9d0...)     2025-12-15 02:00     8d 22h     12h        STALE   
+maicro_monitors.ledger_updates (0x17f9d0...)       2025-09-08 22:04     106d 2h    12h        STALE   
+
+binance
+-------
+Table                                              Last Time (UTC)      Age        Threshold  Status  
+------------------------------------------------------------------------------------------------------
+binance.bn_funding_rates                           2025-12-22 12:00     1d 12h     12h        STALE   
+binance.bn_perp_klines                             2025-12-22 12:00     1d 12h     6h         STALE   
+binance.bn_spot_klines                             2025-12-22 12:00     1d 12h     6h         STALE   
+binance.bn_premium                                 1970-01-01 00:00     20446d     6h         STALE   
+binance.bn_margin_interest_rates                   2025-06-22 22:00     184d 2h    1d 2h      STALE   
+
+----- EMAIL BODY END -----
+Sending table-staleness email to alanpaulkwan@gmail.com...
+Email sent successfully.
+[table_staleness_daily] Done.

@@ -178,6 +178,23 @@ def collect_staleness() -> List[Dict[str, Any]]:
     return rows
 
 
+def _table_db_label(table_str: str) -> str:
+    """
+    Extract a coarse DB label from the rendered table name.
+
+    Example:
+      'maicro_monitors.trades (0x17f9d0...)' -> 'maicro_monitors'
+    """
+    base = table_str.split()[0]  # strip any '(address...)'
+    if "." in base:
+        db = base.split(".", 1)[0]
+    else:
+        db = base
+    if db in {"maicro_logs", "maicro_monitors", "binance"}:
+        return db
+    return "other"
+
+
 def format_email_text(rows: List[Dict[str, Any]]) -> str:
     now = datetime.utcnow()
     lines: List[str] = []
@@ -189,24 +206,47 @@ def format_email_text(rows: List[Dict[str, Any]]) -> str:
     lines.append("        MISSING = table empty/no time data; ERROR = query failed or bad time.")
     lines.append("")
 
-    header = f"{'Table':<50} {'Last Time (UTC)':<20} {'Age':<10} {'Threshold':<10} {'Status':<8}"
-    lines.append(header)
-    lines.append("-" * len(header))
-
+    # Group rows by DB
+    groups: Dict[str, List[Dict[str, Any]]] = {
+        "maicro_logs": [],
+        "maicro_monitors": [],
+        "binance": [],
+        "other": [],
+    }
     for r in rows:
-        table = r["table"]
-        last_time = r["last_time"]
-        age = r["age"]
-        threshold = r["threshold"]
-        status = r["status"]
+        db = _table_db_label(r["table"])
+        groups.setdefault(db, []).append(r)
 
-        last_str = last_time.strftime("%Y-%m-%d %H:%M") if isinstance(last_time, datetime) else "-"
-        age_str = _format_timedelta(age) if isinstance(age, timedelta) else "-"
-        thr_str = _format_timedelta(threshold)
+    header = f"{'Table':<50} {'Last Time (UTC)':<20} {'Age':<10} {'Threshold':<10} {'Status':<8}"
 
-        lines.append(
-            f"{table:<50} {last_str:<20} {age_str:<10} {thr_str:<10} {status:<8}"
-        )
+    def emit_section(title: str, key: str) -> None:
+        section_rows = groups.get(key, [])
+        if not section_rows:
+            return
+        lines.append(title)
+        lines.append("-" * len(title))
+        lines.append(header)
+        lines.append("-" * len(header))
+        for r in section_rows:
+            table = r["table"]
+            last_time = r["last_time"]
+            age = r["age"]
+            threshold = r["threshold"]
+            status = r["status"]
+
+            last_str = last_time.strftime("%Y-%m-%d %H:%M") if isinstance(last_time, datetime) else "-"
+            age_str = _format_timedelta(age) if isinstance(age, timedelta) else "-"
+            thr_str = _format_timedelta(threshold)
+
+            lines.append(
+                f"{table:<50} {last_str:<20} {age_str:<10} {thr_str:<10} {status:<8}"
+            )
+        lines.append("")
+
+    emit_section("maicro_logs", "maicro_logs")
+    emit_section("maicro_monitors", "maicro_monitors")
+    emit_section("binance", "binance")
+    emit_section("other", "other")
 
     # Append any errors at the bottom
     errors = [r for r in rows if r.get("error")]
@@ -234,41 +274,47 @@ def format_email_html(rows: List[Dict[str, Any]]) -> str:
             return "#e5e7eb"  # gray
         return "#ffffff"
 
-    rows_html: List[str] = []
+    # Group rows by DB
+    groups: Dict[str, List[Dict[str, Any]]] = {
+        "maicro_logs": [],
+        "maicro_monitors": [],
+        "binance": [],
+        "other": [],
+    }
     for r in rows:
-        table = r["table"]
-        last_time = r["last_time"]
-        age = r["age"]
-        threshold = r["threshold"]
-        status = r["status"]
+        db = _table_db_label(r["table"])
+        groups.setdefault(db, []).append(r)
 
-        last_str = last_time.strftime("%Y-%m-%d %H:%M") if isinstance(last_time, datetime) else "-"
-        age_str = _format_timedelta(age) if isinstance(age, timedelta) else "-"
-        thr_str = _format_timedelta(threshold)
-        color = status_color(status)
+    def build_section(title: str, key: str) -> str:
+        section_rows = groups.get(key, [])
+        if not section_rows:
+            return ""
 
-        rows_html.append(
-            f"<tr style='background-color:{color};'>"
-            f"<td style='padding:4px 8px;'>{table}</td>"
-            f"<td style='padding:4px 8px;'>{last_str}</td>"
-            f"<td style='padding:4px 8px; text-align:right;'>{age_str}</td>"
-            f"<td style='padding:4px 8px; text-align:right;'>{thr_str}</td>"
-            f"<td style='padding:4px 8px;'>{status}</td>"
-            "</tr>"
-        )
+        rows_html: List[str] = []
+        for r in section_rows:
+            table = r["table"]
+            last_time = r["last_time"]
+            age = r["age"]
+            threshold = r["threshold"]
+            status = r["status"]
 
-    html = f"""<html>
-  <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; color: #111827;">
-    <h2 style="margin-bottom:4px;">MAICRO: Table Staleness Summary</h2>
-    <p style="margin-top:0; color:#6b7280;">
-      Reference time (UTC): <b>{now:%Y-%m-%d %H:%M:%S}</b>
-    </p>
-    <p style="margin-bottom:4px; color:#6b7280;">
-      Legend: <span style="background-color:#dcfce7; padding:2px 4px; border-radius:3px;">OK</span> age ≤ threshold;
-      <span style="background-color:#fee2e2; padding:2px 4px; border-radius:3px;">STALE</span> age &gt; threshold;
-      <span style="background-color:#fef3c7; padding:2px 4px; border-radius:3px;">MISSING</span> empty / no time;
-      <span style="background-color:#e5e7eb; padding:2px 4px; border-radius:3px;">ERROR</span> query failed.
-    </p>
+            last_str = last_time.strftime("%Y-%m-%d %H:%M") if isinstance(last_time, datetime) else "-"
+            age_str = _format_timedelta(age) if isinstance(age, timedelta) else "-"
+            thr_str = _format_timedelta(threshold)
+            color = status_color(status)
+
+            rows_html.append(
+                f"<tr style='background-color:{color};'>"
+                f"<td style='padding:4px 8px;'>{table}</td>"
+                f"<td style='padding:4px 8px;'>{last_str}</td>"
+                f"<td style='padding:4px 8px; text-align:right;'>{age_str}</td>"
+                f"<td style='padding:4px 8px; text-align:right;'>{thr_str}</td>"
+                f"<td style='padding:4px 8px;'>{status}</td>"
+                "</tr>"
+            )
+
+        return f"""
+    <h3 style="margin-top:12px; margin-bottom:4px;">{title}</h3>
     <table cellspacing="0" cellpadding="0" style="border-collapse:collapse; border:1px solid #e5e7eb; margin-top:4px;">
       <thead>
         <tr style="background-color:#f3f4f6;">
@@ -283,6 +329,28 @@ def format_email_html(rows: List[Dict[str, Any]]) -> str:
         {''.join(rows_html)}
       </tbody>
     </table>
+    """
+
+    sections_html = (
+        build_section("maicro_logs", "maicro_logs")
+        + build_section("maicro_monitors", "maicro_monitors")
+        + build_section("binance", "binance")
+        + build_section("other", "other")
+    )
+
+    html = f"""<html>
+  <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; color: #111827;">
+    <h2 style="margin-bottom:4px;">MAICRO: Table Staleness Summary</h2>
+    <p style="margin-top:0; color:#6b7280;">
+      Reference time (UTC): <b>{now:%Y-%m-%d %H:%M:%S}</b>
+    </p>
+    <p style="margin-bottom:4px; color:#6b7280;">
+      Legend: <span style="background-color:#dcfce7; padding:2px 4px; border-radius:3px;">OK</span> age ≤ threshold;
+      <span style="background-color:#fee2e2; padding:2px 4px; border-radius:3px;">STALE</span> age &gt; threshold;
+      <span style="background-color:#fef3c7; padding:2px 4px; border-radius:3px;">MISSING</span> empty / no time;
+      <span style="background-color:#e5e7eb; padding:2px 4px; border-radius:3px;">ERROR</span> query failed.
+    </p>
+    {sections_html}
   </body>
 </html>"""
     return html
@@ -323,7 +391,19 @@ def main() -> None:
     text_body = format_email_text(rows)
     html_body = format_email_html(rows)
 
-    subject = "[MAICRO DAILY] Maicro Table Staleness Summary"
+    # Generate status for subject line
+    status_counts = {"OK": 0, "STALE": 0, "MISSING": 0, "ERROR": 0}
+    for row in rows:
+        status_counts[row["status"]] += 1
+    
+    stale_text = f"{status_counts['STALE']} STALE" if status_counts["STALE"] > 0 else ""
+    missing_text = f"{status_counts['MISSING']} MISSING" if status_counts["MISSING"] > 0 else ""
+    error_text = f"{status_counts['ERROR']} ERROR" if status_counts["ERROR"] > 0 else ""
+    
+    status_parts = [p for p in [stale_text, missing_text, error_text] if p]
+    status_summary = f" ({', '.join(status_parts)})" if status_parts else " (All OK)"
+    
+    subject = f"[MAICRO DAILY] Table Staleness Summary{status_summary}"
 
     print("----- EMAIL BODY BEGIN -----")
     print(text_body)
